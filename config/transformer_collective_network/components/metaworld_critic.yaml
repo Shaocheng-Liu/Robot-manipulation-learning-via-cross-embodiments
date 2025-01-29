@@ -1,0 +1,7 @@
+# @package transformer_collective_network.critic
+
+_target_: mtrl.agent.components.critic.TransformerCritic
+hidden_dim: ${transformer_collective_network.actor.hidden_dim}
+num_layers: ${transformer_collective_network.actor.num_layers}
+transformer_encoder_cfg: ${transformer_collective_network.transformer_encoder}
+

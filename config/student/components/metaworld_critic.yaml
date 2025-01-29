@@ -1,0 +1,7 @@
+# @package student.critic
+
+_target_: mtrl.agent.components.critic.Critic
+hidden_dim: ${student.actor.hidden_dim}
+num_layers: ${student.actor.num_layers}
+encoder_cfg: ${student.encoder}
+multitask_cfg: ${student.multitask}

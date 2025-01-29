@@ -1,0 +1,35 @@
+# @package _group_
+name: transformer_collective_sac
+
+encoder_feature_dim: 50
+num_layers: 0
+num_filters: 0
+embedding_save_path: ${setup.save_dir}/embeddings/
+
+builder:
+  _target_: mtrl.agent.transformer_agent.TransformerAgent
+  # obs_shape
+  # action_shape
+  # device
+  actor_cfg: ${transformer_collective_network.actor}
+  critic_cfg: ${transformer_collective_network.critic}
+  transformer_encoder_cfg: ${transformer_collective_network.transformer_encoder}
+  actor_optimizer_cfg: ${transformer_collective_network.optimizers.actor}
+  critic_optimizer_cfg: ${transformer_collective_network.optimizers.critic}
+  alpha_optimizer_cfg: ${transformer_collective_network.optimizers.alpha}
+  transformer_encoder_optimizer_cfg: ${transformer_collective_network.optimizers.transformer_encoder}
+  discount: 0.99
+  critic_tau: 0.01
+  critic_target_update_freq: 2
+  actor_update_freq: 2
+  use_tra_preprocessing: False
+  use_state_embedding: False  
+  use_cls_prediction_head: True
+  cluster_latent_space: False
+  additional_input_state: True 
+  use_task_id: False 
+  use_zeros: False 
+  tra_preprocessing_dim: 8
+  init_temperature: 0.1
+  dropout: 0.
+  mse_loss_actor: True

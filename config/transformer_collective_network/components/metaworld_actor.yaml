@@ -1,0 +1,8 @@
+# @package transformer_collective_network.actor
+
+_target_: mtrl.agent.components.actor.TransformerActor
+num_layers: 2 #3
+hidden_dim: 300 #600 
+log_std_bounds: [-20, 2]
+transformer_encoder_cfg: ${transformer_collective_network.transformer_encoder}
+

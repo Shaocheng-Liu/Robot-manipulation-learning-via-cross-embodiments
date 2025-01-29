@@ -1,0 +1,7 @@
+# @package worker.critic
+
+_target_: mtrl.agent.components.critic.Critic
+hidden_dim: ${worker.actor.hidden_dim}
+num_layers: ${worker.actor.num_layers}
+encoder_cfg: ${worker.encoder}
+multitask_cfg: ${worker.multitask}

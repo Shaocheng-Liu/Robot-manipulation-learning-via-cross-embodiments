@@ -1,0 +1,81 @@
+# @package _group_
+name: collective_metaworld
+mode: train_worker # train_worker/online_distill_collective_transformer/distill_collective_transformer/evaluate_collective_transformer/train_student/train_student_finetuning/record
+builder:
+  _target_: mtrl.experiment.${experiment.name}.Experiment
+  
+# --- train_worker ---
+init_steps: 0 #4000 
+num_train_steps: 100000
+col_sampling_freq: 10000
+col_training_samples: 800 # multiple of stepsize (400)
+col_training_warmup: 8000
+train_worker: True
+use_unscaled: True
+reset_goal_state: True
+reset_goal_state_in_oder: False
+follow_scripted: False
+
+# --- record ---
+num_recording_steps: 6000
+only_scripted_step: 0 #after this only scripted
+scripted_porb: 0.4
+init_record_step: 2000
+
+# --- distill_collective_transformer ---
+num_actor_train_step: 50001 
+num_critic_train_step: 10000 
+
+# --- online_distill_collective_transformer ---
+num_online_train_step: 60001 # 250000
+init_steps_online_tf: 8000
+follow_col_network: False
+stu_expert_steps: 40000
+actor_update_freq: 2
+distill_scripted_policy: True
+
+#------------ train_student_finetuning -------------
+init_steps_stu: 4000
+num_student_online_trainsteps: 20000
+
+#------------ train_student -------------
+init_steps_stu2: 4000
+num_student_online_trainsteps2: 50000
+expert_train_step: 50000
+constant_expert_weight: 4000
+start_weight: 1.0
+use_scripted_mu: False
+
+#------------ evaluate_collective_transformer -------------
+evaluate_transformer: "collective_network" # collective_network / agent / scripted
+evaluate_episodes: 50
+evaluate_critic_rounds: 5
+recording_eval_episodes: 1
+
+latent_clustering_num: 1
+col_eval_freq: 1000 #150
+eval_latent_representation: False
+evaluate_unused: False
+eval_freq: 4000 # # same as save frequency. This should be a muliple of save.buffer.size_per_chunk
+num_eval_episodes: 10
+should_resume: True
+save: #
+  model:
+    retain_last_n: 1
+    # setting a natural number (say 5) retains the last n (say 5) models.
+    # setting -1 retains all the models.
+    # setting 0 retains no models.
+  buffer:
+    should_save: True
+    size_per_chunk: 20000 # multiple of buffer capacity
+    num_samples_to_save: -1 # number of samples to save. Set to -1 to save all samples
+    delete_replaybuffer: False # after finish
+save_dir: ${setup.save_dir} 
+save_freq: 20000 # multiple of buffer capacity
+save_freq_transformer: 10000
+save_video: True
+save_video_freq: 500000 #muliple of eval_freq
+
+envs_to_exclude_during_training: []
+# v2: [0 "reach-v2", 1 "push-v2", 2 "pick-place-v2", 3 "door-open-v2", 4 "drawer-open-v2", 5 "drawer-close-v2", 6 "button-press-topdown-v2", 7 "peg-insert-side-v2", 8 "window-open-v2", 9 "window-close-v2"]
+# ["reach-v2", "push-v2", "pick-place-v2", "door-open-v2", "drawer-open-v2", "drawer-close-v2", "button-press-topdown-v2", "peg-insert-side-v2", "window-open-v2", "window-close-v2"]

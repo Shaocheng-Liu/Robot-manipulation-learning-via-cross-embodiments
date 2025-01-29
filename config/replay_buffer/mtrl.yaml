@@ -1,0 +1,32 @@
+# @package _group_
+replay_buffer:
+  _target_: mtrl.replay_buffer.ReplayBuffer
+  env_obs_shape: # Will be auto populated
+  action_shape: # Will be auto populated
+  capacity: 140000 
+  batch_size: 512 
+  
+col_replay_buffer:
+  _target_: mtrl.col_replay_buffer.DistilledReplayBuffer
+  env_obs_shape: # Will be auto populated
+  action_shape: # Will be auto populated
+  capacity: 2000000
+  batch_size: 512 
+  normalize_rewards: True
+  
+col_tmp_replay_buffer:
+  _target_: mtrl.replay_buffer.ReplayBuffer
+  env_obs_shape: # Will be auto populated
+  action_shape: # Will be auto populated
+  capacity: 2000000
+  batch_size: 128
+  
+transformer_col_replay_buffer:
+  _target_: mtrl.transformer_replay_buffer.TransformerReplayBuffer
+  env_obs_shape: # Will be auto populated
+  action_shape: # Will be auto populated
+  capacity: 2000000
+  batch_size: 512
+  normalize_rewards: False
+  task_encoding_shape: 6 
+  compressed_state: True

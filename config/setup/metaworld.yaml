@@ -1,0 +1,24 @@
+# @package _group_
+seed: 1
+setup: metaworld
+base_path:
+#save_dir: ${setup.base_path}/logs/${setup.id}
+#save_dir: ${setup.base_path}/logs/experiment4
+save_dir: ${setup.base_path}/logs/experiment_test
+device: cuda:0
+id: sample
+description: Sample Task
+tags:
+  # - sac
+  # - metaworld
+  # - baseline
+  # - single_task
+git:
+  commit_id:
+  has_uncommitted_changes:
+  issue_id:
+date:
+slurm_id:
+debug:
+  should_enable: False
+metadata_path: /home/andi/Desktop/mtrl/metadata/task_embedding/roberta_small/metaworld-all.json
