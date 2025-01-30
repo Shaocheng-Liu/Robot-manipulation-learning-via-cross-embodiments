@@ -1,0 +1,59 @@
+<mujocoinclude>
+    <compiler angle="radian" autolimits="true" inertiafromgeom="auto" inertiagrouprange="4 5"/>
+    <option integrator="implicitfast"/>
+    <asset>
+      <material class="iiwa" name="gray" rgba="0.4 0.4 0.4 1"/>
+      <material class="iiwa" name="light_gray" rgba="0.6 0.6 0.6 1"/>
+      <material class="iiwa" name="black" rgba="0 0 0 1"/>
+      <material class="iiwa" name="orange" rgba="1 0.423529 0.0392157 1"/>
+      <material name="xyz_col" rgba="0.3 0.3 1.0 0.5" shininess="0" specular="0.5"/>
+
+      <mesh file="assets/link_0.obj"/>
+      <mesh file="assets/link_1.obj"/>
+      <mesh file="assets/link_2_orange.obj"/>
+      <mesh file="assets/link_2_grey.obj"/>
+      <mesh file="assets/link_3.obj"/>
+      <mesh file="assets/band.obj"/>
+      <mesh file="assets/kuka.obj"/>
+      <mesh file="assets/link_4_orange.obj"/>
+      <mesh file="assets/link_4_grey.obj"/>
+      <mesh file="assets/link_5.obj"/>
+      <mesh file="assets/link_6_orange.obj"/>
+      <mesh file="assets/link_6_grey.obj"/>
+      <mesh file="assets/link_7.obj"/>
+      <mesh file="../objects/meshes/xyz_base/base.stl" name="base"/>
+      <mesh file="../objects/meshes/xyz_base/eGripperBase.stl" name="eGripperBase"/>
+      <mesh file="../objects/meshes/xyz_base/head.stl" name="head"/>
+    </asset>
+
+    <default>
+      <default class="iiwa">
+        <material specular="0.5" shininess="0.25"/>
+        <joint axis="0 0 1"/>
+        <general gaintype="fixed" biastype="affine" gainprm="2000" biasprm="0 -2000 -200"/>
+        <default class="joint1">
+          <joint range="-2.96706 2.96706"/>
+          <general ctrlrange="-2.96706 2.96706"/>
+          <default class="joint2">
+            <joint range="-2.0944 2.0944"/>
+            <general ctrlrange="-2.0944 2.0944"/>
+          </default>
+        </default>
+        <default class="joint3">
+          <joint range="-3.05433 3.05433"/>
+          <general ctrlrange="-3.05433 3.05433"/>
+        </default>
+        <default class="visual">
+          <geom type="mesh" contype="0" conaffinity="0" group="2" material="gray"/>
+        </default>
+        <default class="collision">
+          <geom group="3"/>
+        </default>
+        <site size="0.001" rgba="1 0 0 1" group="4"/>
+      </default>
+      <default class="base_col">
+          <geom conaffinity="1" condim="4" contype="1" group="4" margin="0.001" material="xyz_col" solimp=".8 .9 .01" solref=".02 1"/>
+      </default>
+    </default>
+
+</mujocoinclude>

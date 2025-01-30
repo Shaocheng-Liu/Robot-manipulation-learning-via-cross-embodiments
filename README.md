@@ -14,9 +14,7 @@
 
 3. [Run the code](#Runthecode)
 
-4. [Baseline](#Baseline)
-
-5. [Acknowledgements](#Acknowledgements)
+4. [Acknowledgements](#Acknowledgements)
 
 ## Introduction
 
@@ -32,7 +30,7 @@ Experimental evaluations on the MetaWorld benchmark demonstrate that the propose
 
 ## Setup
 
-* Clone the repository: `git clone https://github.com/Ghiara/LEGION.git`.
+* Clone the repository: `git clone https://github.com/4nd1L0renz/A-transformer-based-collective-learning-framework-for-scalable-knowledge-accumulation-and-transfer.git`.
 
 * Install dependencies: `pip install -r requirements/dev.txt`
   
@@ -134,7 +132,9 @@ Our code uses Hydra to manage the configuration for the experiments. The config 
 
 * **Experiment mode Create Dataset for distillation**: Creates the offline dataset for training the collective network by distilling the expert knowledge into a temporary network while also recording state, action, rewards etc
 
-* **Experiment mode Distill_collective_transformer**: Loads all collected datasets and runs the training of the collective network
+* **Train trajectory transformer**: Create torch dataset by running `Transformer_RNN/dataset_tf.py` (specify location of training data in code); Run training via `Transformer_RNN/RepresentationTransformerWithCLS.py`
+
+* **Experiment mode Distill collective network**: Loads all collected datasets and runs the training of the collective network; expects the training data in `(experimentfolder)/buffer/collective_buffer/train` and validation data in `(experimentfolder)/buffer/collective_buffer/validation`
 
 * **Experiment mode Evaluate_collective_transformer**: Evaluates the performance of experts or collective network
 
@@ -143,6 +143,8 @@ Our code uses Hydra to manage the configuration for the experiments. The config 
 * **Experiment mode Train_student_finetuning**: Loads the collective network and finetunes it on a new task in standard SAC manner
 
 * **Experiment mode Record**: Used only for test purposes. Uses either random-, scripted or probabilistic scripted policy to recorde experiences
+
+* **Different embodiments**: For changing between different robots (Kuka, Sawyer, Panda) please adjust `Metaworld/metaworld/envs/assets_v2/sawyer_xyz/(environment name).xml` and uncomment the robot type you want. For the Panda robot please also additionally uncomment line 689-691 in `Metaworld/metaworld/envs/mujoco/sawyer_xyz/saywer_xyz_env.py`
 
 After setting the configuration for the experiment run the code as follows (for metaworld-mt1):
 ```
