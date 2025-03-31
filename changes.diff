@@ -1,0 +1,140 @@
+diff -ur -x .git ./mtenv/envs/metaworld/env.py ../../A-transformer-based-collective-learning-framework-for-scalable-knowledge-accumulation-and-transfer/mtenv/mtenv/envs/metaworld/env.py
+--- ./mtenv/envs/metaworld/env.py	2025-03-31 04:40:22.591929502 +0200
++++ ../../A-transformer-based-collective-learning-framework-for-scalable-knowledge-accumulation-and-transfer/mtenv/mtenv/envs/metaworld/env.py	2024-07-06 14:48:41.000000000 +0200
+@@ -3,7 +3,7 @@
+ from typing import Any, Callable, Dict, List, Optional, Tuple
+ 
+ import metaworld
+-from gym import Env
++from gymnasium import Env
+ 
+ from mtenv import MTEnv
+ from mtenv.envs.metaworld.wrappers.normalized_env import (  # type: ignore[attr-defined]
+@@ -125,7 +125,7 @@
+         def _make_env():
+             for name, env_cls in _get_class_items(current_benchmark):
+                 if name == env_id:
+-                    env = env_cls()
++                    env = env_cls(render_mode='rgb_array')
+                     task = env_id_to_task_map[env_id]
+                     env.set_task(task)
+                     if should_perform_reward_normalization:
+@@ -195,3 +195,78 @@
+         env_id_to_task_map=env_id_to_task_map,
+     )
+     return mtenv
++
++def get_list_of_envs(
++    benchmark: Optional[metaworld.Benchmark],
++    benchmark_name: str,
++    env_id_to_task_map: Optional[EnvIdToTaskMapType],
++    should_perform_reward_normalization: bool = True,
++    task_name: str = "pick-place-v1",
++    num_copies_per_env: int = 1,
++) -> Tuple[List[Any], Dict[str, Any]]:
++
++    if not benchmark:
++        if benchmark_name == "MT1":
++            benchmark = metaworld.ML1(task_name)
++        elif benchmark_name == "MT10":
++            benchmark = metaworld.MT10()
++        elif benchmark_name == "MT50":
++            benchmark = metaworld.MT50()
++        else:
++            raise ValueError(f"benchmark_name={benchmark_name} is not valid.")
++
++    env_id_list = list(benchmark.train_classes.keys())
++
++    def _get_class_items(current_benchmark):
++        return current_benchmark.train_classes.items()
++
++    def _get_tasks(current_benchmark):
++        return current_benchmark.train_tasks
++
++    def _get_env_id_to_task_map() -> EnvIdToTaskMapType:
++        env_id_to_task_map: EnvIdToTaskMapType = {}
++        current_benchmark = benchmark
++        for env_id in env_id_list:
++            for name, _ in _get_class_items(current_benchmark):
++                if name == env_id:
++                    task = random.choice(
++                        [
++                            task
++                            for task in _get_tasks(current_benchmark)
++                            if task.env_name == name
++                        ]
++                    )
++                    env_id_to_task_map[env_id] = task
++        return env_id_to_task_map
++
++    if env_id_to_task_map is None:
++        env_id_to_task_map: EnvIdToTaskMapType = _get_env_id_to_task_map()  # type: ignore[no-redef]
++    assert env_id_to_task_map is not None
++
++    def make_envs_use_id(env_id: str):
++        current_benchmark = benchmark
++        
++        
++        def _make_env():
++            for name, env_cls in _get_class_items(current_benchmark):
++                if name == env_id:
++                    env = env_cls(render_mode='rgb_array')
++                    task = env_id_to_task_map[env_id]
++                    env.set_task(task)
++                    if should_perform_reward_normalization:
++                        env = NormalizedEnvWrapper(env, normalize_reward=True)
++                    return env
++        # modified return built single envs
++        single_env = _make_env()
++        return single_env
++
++    if num_copies_per_env > 1:
++        env_id_list = [
++            [env_id for _ in range(num_copies_per_env)] for env_id in env_id_list
++        ]
++        env_id_list = [
++            env_id for env_id_sublist in env_id_list for env_id in env_id_sublist
++        ]
++
++    list_of_envs = [make_envs_use_id(env_id) for env_id in env_id_list]
++    return list_of_envs, env_id_to_task_map
+diff -ur -x .git ./mtenv/envs/metaworld/wrappers/normalized_env.py ../../A-transformer-based-collective-learning-framework-for-scalable-knowledge-accumulation-and-transfer/mtenv/mtenv/envs/metaworld/wrappers/normalized_env.py
+--- ./mtenv/envs/metaworld/wrappers/normalized_env.py	2025-03-31 04:40:22.592196348 +0200
++++ ../../A-transformer-based-collective-learning-framework-for-scalable-knowledge-accumulation-and-transfer/mtenv/mtenv/envs/metaworld/wrappers/normalized_env.py	2024-07-04 19:22:59.000000000 +0200
+@@ -2,9 +2,9 @@
+ #
+ # """"An environment wrapper that normalizes action, observation and reward."""
+ # type: ignore
+-import gym
+-import gym.spaces
+-import gym.spaces.utils
++import gymnasium as gym
++import gymnasium.spaces
++import gymnasium.spaces.utils
+ import numpy as np
+ 
+ 
+@@ -49,7 +49,7 @@
+         self._flatten_obs = flatten_obs
+ 
+         self._obs_alpha = obs_alpha
+-        flat_obs_dim = gym.spaces.utils.flatdim(env.observation_space)
++        flat_obs_dim = gymnasium.spaces.utils.flatdim(env.observation_space)
+         self._obs_mean = np.zeros(flat_obs_dim)
+         self._obs_var = np.ones(flat_obs_dim)
+ 
+@@ -157,7 +157,7 @@
+         else:
+             scaled_action = action
+         try:
+-            next_obs, reward, done, info = self.env.step(scaled_action)
++            next_obs, reward, done, truncated, info = self.env.step(scaled_action)
+         except Exception as e:
+             print(e)
+ 
+@@ -166,4 +166,4 @@
+         if self._normalize_reward:
+             reward = self._apply_normalize_reward(reward)
+ 
+-        return next_obs, reward * self._scale_reward, done, info
++        return next_obs, reward * self._scale_reward, done, truncated, info
