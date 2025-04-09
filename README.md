@@ -12,7 +12,7 @@
 
 2. [Setup](#Setup)
 
-3. [Run the code](#Runthecode)
+3. [Run the code](#Run-the-code)
 
 4. [Acknowledgements](#Acknowledgements)
 
