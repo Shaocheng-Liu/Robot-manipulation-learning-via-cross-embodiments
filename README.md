@@ -29,7 +29,7 @@ Experimental evaluations on the MetaWorld benchmark demonstrate that the propose
 [![Movie1](/imgs/panda_drawer_120.png "Demonstration video")](https://youtu.be/5edG_Wm39Mc)
 
 ## Setup
-
+A full installation requires python 3.8:
 * Clone the repository: `git clone https://github.com/4nd1L0renz/A-transformer-based-collective-learning-framework-for-scalable-knowledge-accumulation-and-transfer.git`.
 
 * Install dependencies: `pip install -r requirements/dev.txt`
@@ -114,6 +114,36 @@ def get_list_of_envs(
     return list_of_envs, env_id_to_task_map
 ```
 
+These are the steps all in one script:
+```bash
+git clone git@github.com:4nd1L0renz/A-transformer-based-collective-learning-framework-for-scalable-knowledge-accumulation-and-transfer.git framework
+cd framework
+
+# install python 3.8
+pyenv install 3.8 
+ ~/.pyenv/versions/3.8.20/bin/python3 -m venv venv
+
+source venv/bin/activate
+pip install -r requirements/dev.txt
+pip install mujoco==3.2.3
+
+git clone git@github.com:facebookresearch/mtenv.git
+cd mtenv
+
+# apply custom patches
+patch -p1 < ../../changes.diff
+
+pip install -e .
+
+pip uninstall gym
+pip install gym==0.26.0
+pip install gymnasium==1.0.0a2
+
+pip install -e .[all]
+
+cd ../Metaworld
+pip install -e .
+```
 ## Run the code
 
 ### Config
