@@ -131,7 +131,7 @@ git clone git@github.com:facebookresearch/mtenv.git
 cd mtenv
 
 # apply custom patches
-patch -p1 < ../../changes.diff
+patch -p1 < ../changes.diff
 
 pip install -e .
 
