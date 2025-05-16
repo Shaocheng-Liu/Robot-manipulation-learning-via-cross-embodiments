@@ -1,0 +1,59 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*.so
+
+# Package metadata
+*.egg-info/
+.eggs/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Distribution / packaging
+build/
+dist/
+*.spec
+
+# Logs and debug
+*.log
+*.out
+
+# OS or editor files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IPython / Jupyter
+.ipynb_checkpoints/
+
+# VSCode
+.vscode/
+
+# Pyre/Pylint/etc
+.pyre/
+.mypy_cache/
+.pytest_cache/
+coverage.*
+
+# Ignore all auto-generated config backups or dumps
+*.bak
+*.tmp
+*.old
+
+# Specific to your project (Metaworld + MTRL)
+Metaworld/**/*.pyc
+Metaworld/**/__pycache__/
+Metaworld/**/metaworld.egg-info/
+mtrl/**/__pycache__/
+mtrl/**/*.pyc
+
+# Uncomment this to ignore YAML configs if needed (optional)
+# *.yaml
+
