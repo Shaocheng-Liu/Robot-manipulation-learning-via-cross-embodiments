@@ -1,0 +1,48 @@
+Dataset Summary:
+X Data
+  total size: 10112 units
+  batch size: 2528 units
+  num. batches: 4
+Allocation Model:  DP mixture with K=0. Concentration gamma0= 5.00
+Obs. Data  Model:  Gaussian with diagonal covariance.
+Obs. Data  Prior:  independent Gauss-Wishart prior on each dimension
+  Wishart params 
+    nu = 8  ...
+  beta = [ 6  6]  ...
+  Expectations
+  E[  mean[k]] = 
+  [ 0  0] ...
+  E[ covar[k]] = 
+  [[1. 0.]
+   [0. 1.]] ...
+Initialization:
+  initname = randexamples
+  K = 1 (number of clusters)
+  seed = 1607680
+  elapsed_time: 0.0 sec
+Learn Alg: memoVB | task  1/1 | alg. seed: 1607680 | data order seed: 8541952
+task_output_path: /home/len1218/documents/BT/framework/Transformer_RNN/bnpy_save/0/1
+    0.250/20 after      0 sec. |   3070.0 MiB | K    4 | loss -3.732164172e-01 |  
+    0.500/20 after      0 sec. |   3070.1 MiB | K    4 | loss -4.559851403e-01 |  
+    0.750/20 after      1 sec. |   3070.1 MiB | K    4 | loss -4.870117612e-01 |  
+    1.000/20 after      1 sec. |   3070.1 MiB | K    4 | loss -5.095861204e-01 |  
+    2.000/20 after      1 sec. |   3070.2 MiB | K    3 | loss -5.125548194e-01 | Ndiff   65.556 
+    3.000/20 after      1 sec. |   3070.2 MiB | K    3 | loss -5.131126400e-01 | Ndiff   32.501 
+    4.000/20 after      1 sec. |   3070.2 MiB | K    3 | loss -5.134565365e-01 | Ndiff   19.236 
+    5.000/20 after      1 sec. |   3070.2 MiB | K    3 | loss -5.137043004e-01 | Ndiff   14.191 
+    6.000/20 after      1 sec. |   3070.2 MiB | K    3 | loss -5.138522742e-01 | Ndiff   13.472 
+    7.000/20 after      1 sec. |   3070.2 MiB | K    3 | loss -5.139421558e-01 | Ndiff   12.125 
+    8.000/20 after      2 sec. |   3070.2 MiB | K    3 | loss -5.139972881e-01 | Ndiff    8.765 
+    9.000/20 after      2 sec. |   3070.2 MiB | K    3 | loss -5.140271171e-01 | Ndiff    8.296 
+   10.000/20 after      2 sec. |   3070.2 MiB | K    3 | loss -5.140445017e-01 | Ndiff    5.867 
+   11.000/20 after      2 sec. |   3070.2 MiB | K    3 | loss -5.140531504e-01 | Ndiff    4.302 
+   12.000/20 after      2 sec. |   3070.2 MiB | K    3 | loss -5.140577140e-01 | Ndiff    3.725 
+   13.000/20 after      2 sec. |   3070.2 MiB | K    3 | loss -5.140601549e-01 | Ndiff    2.240 
+   14.000/20 after      2 sec. |   3070.2 MiB | K    3 | loss -5.140615272e-01 | Ndiff    2.110 
+   15.000/20 after      2 sec. |   3070.2 MiB | K    3 | loss -5.140622374e-01 | Ndiff    1.162 
+   16.000/20 after      2 sec. |   3070.2 MiB | K    3 | loss -5.140626141e-01 | Ndiff    0.893 
+   17.000/20 after      2 sec. |   3070.2 MiB | K    3 | loss -5.140628021e-01 | Ndiff    0.698 
+   18.000/20 after      2 sec. |   3070.2 MiB | K    3 | loss -5.140628884e-01 | Ndiff    0.550 
+   19.000/20 after      2 sec. |   3070.2 MiB | K    3 | loss -5.140629327e-01 | Ndiff    0.392 
+   20.000/20 after      2 sec. |   3070.2 MiB | K    3 | loss -5.140629561e-01 | Ndiff    0.270 
+... done. not converged. max laps thru data exceeded.

@@ -150,7 +150,8 @@ pip install bnpy
 
 cd ..
 sed -i "s|^project_root: .*|project_root: $(pwd)|" config/collective_config.yaml
-sed -i "s|^path_data = .*|path_data = '$(pwd)/Transformer_RNN/dataset/'|" Transformer_RNN/dataset_tf.py
+sed -i "s|path_data = .*|path_data = '$(pwd)/Transformer_RNN/dataset/'|" Transformer_RNN/dataset_tf.py
+sed -i "s|^bnpy_save_dir = .*|bnpy_save_dir = '$(pwd)/Transformer_RNN/bnpy_save/'|" Transformer_RNN/RepresentationTransformerWithCLS.py
 pip install -e .
 ```
 ## Run the code

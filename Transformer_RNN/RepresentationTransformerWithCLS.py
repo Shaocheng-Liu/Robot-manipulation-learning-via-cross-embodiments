@@ -550,6 +550,7 @@ def trajectory_embedding_valdation(encoder, prediction_head_cls, samples_num, da
     obs_rewards = torch.cat(reward_arr).cpu().detach().numpy()
     time_steps = np.concatenate(time_step_arr)
     print("Saving embeddings...")
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
     torch.save({"task": task, "tra_emb": t, "state_emb": z, "rewards": rewards, "task_arm": task_arm, "states": obs_state, "actions": obs_actions, "rew": obs_rewards, "timesteps": time_steps}, save_path)
 
     print("saving cluster assignment")
@@ -712,7 +713,7 @@ def manage_latent_representation(z, env_idx, prefix:str=''):
     # save the file
     np.savez(bnpy_save_dir+'/data'+'/latent_samples_{}.npz'.format(prefix), **data)
 
-def load_bnpy_model(bnpy_load_path='/home/andi/Desktop/mtrl/Transformer_RNN/bnpy_save/save'):
+def load_bnpy_model(bnpy_load_path):
     global bnpy_model
     global info_dict
     if os.path.exists(bnpy_load_path) and os.path.isdir(bnpy_load_path):
@@ -864,7 +865,7 @@ mask_prob = 0.2
 mask_unchanged = 0.15
 random_mask_prob = 0.1
 
-bnpy_save_dir = '/home/andi/Desktop/mtrl/Transformer_RNN/bnpy_save/' 
+bnpy_save_dir = '/home/len1218/documents/BT/framework/Transformer_RNN/bnpy_save/'
 gamma0=5.0
 num_lap=20
 sF=1. #0.1
@@ -918,7 +919,7 @@ seed=2
 embedding_num = 3_000 #20_000
 model_path = 'Transformer_RNN/checkpoints/representation_cls_transformer_checkpoint.pth'
 dataset_path = 'Transformer_RNN/decision_tf_dataset/recorded_envs/'
-dataset_path = 'Transformer_RNN/decision_tf_dataset/perfect_data/'
+dataset_path = 'Transformer_RNN/decision_tf_dataset/buffer_distill/'
 #dataset_path = 'Transformer_RNN/decision_tf_dataset/recorded_faucet/'
 #dataset_path = 'Transformer_RNN/decision_tf_dataset/eval_embodiments/'
 #dataset_path = 'Transformer_RNN/decision_tf_dataset/kuka_saywer/'
@@ -927,7 +928,7 @@ dataset_path = 'Transformer_RNN/decision_tf_dataset/perfect_data/'
 #dataset_path = 'Transformer_RNN/decision_tf_dataset/distill+saywer/'
 #dataset_path = 'Transformer_RNN/decision_tf_dataset/expert_30/'
 
-val_dataset_path = 'Transformer_RNN/decision_tf_dataset/recorded_envs_val/'
+val_dataset_path = 'Transformer_RNN/decision_tf_dataset/buffer_distill/'
 #val_dataset_path = 'Transformer_RNN/decision_tf_dataset/recorded_faucet/'
 #val_dataset_path = 'Transformer_RNN/decision_tf_dataset/eval_embodiments/'
 

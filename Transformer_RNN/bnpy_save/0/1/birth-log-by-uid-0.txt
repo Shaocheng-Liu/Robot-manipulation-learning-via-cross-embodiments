@@ -1,0 +1,44 @@
+STATUS uid     0  lap   0.250 lapCeil     1 batchPos   1/4 batchID   0  N_b  2528.000 N_ttl  2528.000 ELIGIBLE 
+Creating proposal for targetUID 0 at lap 0.25 batchID 0
+Preparing target dataset for Bregman k-means analysis...
+  Targeted comp has 2528.00 atoms assigned out of 2528.
+  Filtering to find atoms with resp > 0.10
+  Found 2528 atoms meeting this requirement.
+Running Bregman k-means with K=10 for 1 iters
+iter 0: Lscore -2.691e+03
+  288.00   56.00  302.00  248.00  670.00  309.00  277.00  167.00   39.00  172.00
+Bregman k-means DONE. Delivered 10 non-empty clusters
+      1    2    3    4    5    6    7    8    9   10
+   670. 309. 302. 288. 277. 248. 172. 167. 56.0 39.0
+ Running 5 refinement iterations (--b_nRefineSteps)
+ target prob redistributed by policy uniform (--b_method_xPi)
+ pi[ktarget] before 0.2857  after 0.0057.
+ pi[new comps]: 0.0280 0.0280 0.0280 0.0280 0.0280 0.0280 0.0280 0.0280 0.0280 0.0280
+      1    2    3    4    5    6    7    8    9   10
+   750. 488. 193. 231. 327. 209. 132. 137. 24.5 32.3
+   771. 659. 134. 217. 342. 175. 92.4 95.5 13.7 25.8
+   770. 772. 102. 217. 351. 154. 70.0 65.2 6.47 17.6
+   768. 827. 84.9 224. 365. 137. 57.8 50.1 2.01 9.66
+   768. 827. 84.9 224. 365. 137. 57.8 50.1           (removed comps below minimum size of 10.00)
+   992. 827. 84.9 m  1 365. 137. 57.8 50.1          
+   992. 1193 84.9      m  2 137. 57.8 50.1          
+   992. 1193 135.           137. 57.8 m  3          
+   992. 1193 192.           137. m  3               
+   992. 1193 330.           m  3                    
+   1020 1154 352.                                   
+Proposal build phase DONE. Created 3 candidate clusters.
+
+Eval     targetUID 0 at lap 0.250 lapCeil 1 | ACCEPT change_loss -1.093e-01 Knew    3
+   gainL -1.093e-01
+    curL -2.639e-01
+   propL -3.732e-01
+   gain_  Lalloc -1.670e-01
+   gain_   Ldata  2.445e-01
+   gain_Lentropy  3.179e-02
+   Accepted. Jump up to loss -3.732e-01 
+    Mass transfered to new comps: 2528.00
+    Remaining mass at targetUID 0: -0.00
+
+STATUS uid     0  lap   0.500 lapCeil     1 batchPos   2/4 batchID   1  N_b     0.000 N_ttl    -0.000 TOO SMALL 0.00 < 10.00
+STATUS uid     0  lap   0.750 lapCeil     1 batchPos   3/4 batchID   2  N_b     0.000 N_ttl     0.000 TOO SMALL 0.00 < 10.00
+STATUS uid     0  lap   1.000 lapCeil     1 batchPos   0/4 batchID   3  N_b     0.000 N_ttl     0.000 TOO SMALL 0.00 < 10.00

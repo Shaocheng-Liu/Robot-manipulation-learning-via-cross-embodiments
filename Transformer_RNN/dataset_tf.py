@@ -132,11 +132,11 @@ if __name__ == "__main__":
     sys.path.append(os.path.abspath(os.path.join('..', 'mtrl')))
     from mtrl.col_replay_buffer import DistilledReplayBuffer
 
-    path_data = '/home/len1218/documents/BT/framework/logs/experiment_test/buffer/'
-    safe_path = 'Transformer_RNN/decision_tf_dataset/buffer_distill'
+    path_data = '/home/len1218/documents/BT/framework/logs/experiment_test/buffer/buffer_distill/'
+    safe_path = 'Transformer_RNN/decision_tf_dataset/buffer_distill/'
     #safe_path_tra = 'Transformer_RNN/replay_buffer_dataset_tra/'
     #subdicts = ['perfect_data/'] # 'distill/', 'saywer/' | 'new_init/' 'distill/' 'expert/' 'kuka/' 'saywer/' 'distill_all/'
-    subdicts = ['buffer_distill/'] # 'distill/', 'saywer/' | 'new_init/' 'distill/' 'expert/' 'kuka/' 'saywer/' 'distill_all/'
+    subdicts = ['train/','validation/' ] # 'distill/', 'saywer/' | 'new_init/' 'distill/' 'expert/' 'kuka/' 'saywer/' 'distill_all/'
 
     seed = 0
     np.random.seed(seed)
