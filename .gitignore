@@ -12,7 +12,6 @@ __pycache__/
 .venv/
 venv/
 ENV/
-env/
 
 # Distribution / packaging
 build/
@@ -53,6 +52,8 @@ Metaworld/**/__pycache__/
 Metaworld/**/metaworld.egg-info/
 mtrl/**/__pycache__/
 mtrl/**/*.pyc
+
+mtenv
 
 # Uncomment this to ignore YAML configs if needed (optional)
 # *.yaml
