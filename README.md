@@ -160,7 +160,7 @@ Our code uses Hydra to manage the configuration for the experiments. The config 
 
 * **Experiment mode Train expert**: Train an expert on a task. While training collect regular experience samples for later training of the transformer trajectory encoder
 
-* **Experiment mode Create Dataset for distillation**: Creates the offline dataset for training the collective network by distilling the expert knowledge into a temporary network while also recording state, action, rewards etc
+* **Experiment mode Online Distill collective network**: Creates the offline dataset for training the collective network by distilling the expert knowledge into a temporary network while also recording state, action, rewards etc
 
 * **Train trajectory transformer**: Create torch dataset by running `Transformer_RNN/dataset_tf.py` (specify location of training data in code); Run training via `Transformer_RNN/RepresentationTransformerWithCLS.py`
 
