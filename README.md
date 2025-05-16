@@ -149,7 +149,7 @@ pip install numpy==1.23.5
 pip install bnpy
 
 cd ..
-echo "project_root: $(pwd)" >> config/collective_config.yaml
+sed -i "s|^project_root: .*|project_root: $(pwd)|" config/collective_config.yaml
 ```
 ## Run the code
 
