@@ -150,6 +150,8 @@ pip install bnpy
 
 cd ..
 sed -i "s|^project_root: .*|project_root: $(pwd)|" config/collective_config.yaml
+sed -i "s|^path_data = .*|path_data = '$(pwd)/Transformer_RNN/dataset/'|" Transformer_RNN/dataset_tf.py
+pip install -e .
 ```
 ## Run the code
 

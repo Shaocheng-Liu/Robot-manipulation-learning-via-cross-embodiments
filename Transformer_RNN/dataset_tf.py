@@ -57,6 +57,7 @@ class TFDataset(Dataset):
             start_idx = i * chunk_size
             end_idx = (i + 1) * chunk_size
             print(f"saved {chunk_path}")
+            os.makedirs(safe_path, exist_ok=True)
             torch.save({
                 "states": self.states[start_idx:end_idx],
                 "actions": self.actions[start_idx:end_idx],
@@ -92,7 +93,6 @@ def load_and_preprocess_buffer(path, buffer_name, arm_count):
         capacity=2_000_000,
         batch_size=1, 
         device=torch.device('cuda'), 
-        dpmm_batch_size=1,
         normalize_rewards=False
     )
     replay_buffer.load(save_dir=path + buffer_name)
@@ -132,10 +132,11 @@ if __name__ == "__main__":
     sys.path.append(os.path.abspath(os.path.join('..', 'mtrl')))
     from mtrl.col_replay_buffer import DistilledReplayBuffer
 
-    path_data = '/home/andi/Desktop/mtrl/Transformer_RNN/dataset/'
-    safe_path = 'Transformer_RNN/decision_tf_dataset/perfect_data/'
+    path_data = '/home/len1218/documents/BT/framework/logs/experiment_test/buffer/'
+    safe_path = 'Transformer_RNN/decision_tf_dataset/buffer_distill'
     #safe_path_tra = 'Transformer_RNN/replay_buffer_dataset_tra/'
-    subdicts = ['perfect_data/'] # 'distill/', 'saywer/' | 'new_init/' 'distill/' 'expert/' 'kuka/' 'saywer/' 'distill_all/'
+    #subdicts = ['perfect_data/'] # 'distill/', 'saywer/' | 'new_init/' 'distill/' 'expert/' 'kuka/' 'saywer/' 'distill_all/'
+    subdicts = ['buffer_distill/'] # 'distill/', 'saywer/' | 'new_init/' 'distill/' 'expert/' 'kuka/' 'saywer/' 'distill_all/'
 
     seed = 0
     np.random.seed(seed)
