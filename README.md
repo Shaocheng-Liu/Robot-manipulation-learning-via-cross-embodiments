@@ -116,7 +116,7 @@ def get_list_of_envs(
 
 These are the steps all in one script:
 ```bash
-git clone git@github.com:4nd1L0renz/A-transformer-based-collective-learning-framework-for-scalable-knowledge-accumulation-and-transfer.git framework
+git clone git@github.com:argator18/A-transformer-based-collective-learning-framework-for-scalable-knowledge-accumulation-and-transfer.git framework
 cd framework
 
 # install python 3.8
@@ -143,6 +143,13 @@ pip install -e .[all]
 
 cd ../Metaworld
 pip install -e .
+pip install gym==0.21.0
+pip install protobuf==3.20.3
+pip install numpy==1.23.5
+pip install bnpy
+
+cd ..
+echo "project_root: $(pwd)" >> config/collective_config.yaml
 ```
 ## Run the code
 
