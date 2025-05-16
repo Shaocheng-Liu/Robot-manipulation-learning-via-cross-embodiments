@@ -19,8 +19,10 @@ dist/
 *.spec
 
 # Logs and debug
+logs
 *.log
 *.out
+outputs
 
 # OS or editor files
 .DS_Store
