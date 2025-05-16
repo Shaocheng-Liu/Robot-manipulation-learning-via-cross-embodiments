@@ -1,0 +1,4 @@
+- setup=metaworld
+- env=metaworld-mt1
+- worker.multitask.num_envs=1
+- experiment.mode=train_worker

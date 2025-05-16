@@ -11,7 +11,7 @@ transformer:
 #  sequence_len: 5 #4 #16
   dropout: 0.
   with_cls: False
-  model_path: "/home/andi/Desktop/mtrl/Transformer_RNN/transformer_checkpoint.pth"
+  model_path: "${project_root}/Transformer_RNN/transformer_checkpoint.pth"
   
 representation_transformer:
   _target_: mtrl.agent.components.transformer_trajectory_encoder.RepresentationEncoderTransformer
@@ -23,14 +23,14 @@ representation_transformer:
   nlayers: 3
   sequence_len: 20 #15
   dropout: 0.
-  model_path: "/home/andi/Desktop/mtrl/Transformer_RNN/checkpoints/representation_cls_transformer_checkpoint.pth"
+  model_path: "${project_root}/Transformer_RNN/checkpoints/representation_cls_transformer_checkpoint.pth"
   
 prediction_head_cls:
   _target_: mtrl.agent.components.transformer_trajectory_encoder.ClsPredictionHead
-  model_path: "/home/andi/Desktop/mtrl/Transformer_RNN/checkpoints/representation_cls_transformer_checkpoint.pth"
+  model_path: "${project_root}/Transformer_RNN/checkpoints/representation_cls_transformer_checkpoint.pth"
   latent_dim: 6 #5
   
 bnpy_model:
   _target_: mtrl.agent.components.transformer_trajectory_encoder.Bnpy_model
-  bnpy_load_path: "/home/andi/Desktop/mtrl/Transformer_RNN/bnpy_save/save"
+  bnpy_load_path: "${project_root}/Transformer_RNN/bnpy_save/save"
  

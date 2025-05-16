@@ -21,4 +21,4 @@ date:
 slurm_id:
 debug:
   should_enable: False
-metadata_path: /home/andi/Desktop/mtrl/metadata/task_embedding/roberta_small/metaworld-all.json
+metadata_path: ${project_root}/metadata/task_embedding/roberta_small/metaworld-all.json
