@@ -158,19 +158,19 @@ Our code uses Hydra to manage the configuration for the experiments. The config 
 
 ### Execution
 
-* **Experiment mode Train expert**: Train an expert on a task. While training collect regular experience samples for later training of the transformer trajectory encoder
+1. **Experiment mode Train expert**: Train an expert on a task. While training collect regular experience samples for later training of the transformer trajectory encoder
 
-* **Experiment mode Online Distill collective network**: Creates the offline dataset for training the collective network by distilling the expert knowledge into a temporary network while also recording state, action, rewards etc
+2. **Experiment mode Online Distill collective network**: Creates the offline dataset for training the collective network by distilling the expert knowledge into a temporary network while also recording state, action, rewards etc
 
-* **Train trajectory transformer**: Create torch dataset by running `Transformer_RNN/dataset_tf.py` (specify location of training data in code); Run training via `Transformer_RNN/RepresentationTransformerWithCLS.py`
+3. **Train trajectory transformer**: Create torch dataset by running `Transformer_RNN/dataset_tf.py` (specify location of training data in code); Run training via `Transformer_RNN/RepresentationTransformerWithCLS.py`
 
-* **Experiment mode Distill collective network**: Loads all collected datasets and runs the training of the collective network; expects the training data in `(experimentfolder)/buffer/collective_buffer/train` and validation data in `(experimentfolder)/buffer/collective_buffer/validation`
+4. **Experiment mode Distill collective network**: Loads all collected datasets and runs the training of the collective network; expects the training data in `(experimentfolder)/buffer/collective_buffer/train` and validation data in `(experimentfolder)/buffer/collective_buffer/validation`
 
-* **Experiment mode Evaluate_collective_transformer**: Evaluates the performance of experts or collective network
+5. **Experiment mode Evaluate_collective_transformer**: Evaluates the performance of experts or collective network
 
-* **Experiment mode Train_student**: Loads the collective network and teaches a student policy a learned task by providing it an addtional reward
+6. **Experiment mode Train_student**: Loads the collective network and teaches a student policy a learned task by providing it an addtional reward
 
-* **Experiment mode Train_student_finetuning**: Loads the collective network and finetunes it on a new task in standard SAC manner
+7. **Experiment mode Train_student_finetuning**: Loads the collective network and finetunes it on a new task in standard SAC manner
 
 * **Experiment mode Record**: Used only for test purposes. Uses either random-, scripted or probabilistic scripted policy to recorde experiences
 
