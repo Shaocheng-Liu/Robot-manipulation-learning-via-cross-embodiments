@@ -5,16 +5,19 @@ builder:
   _target_: mtrl.experiment.${experiment.name}.Experiment
   
 # --- train_worker ---
-init_steps: 0 #4000 
-num_train_steps: 100000
-col_sampling_freq: 10000
-col_training_samples: 800 # multiple of stepsize (400)
-col_training_warmup: 8000
-train_worker: True
-use_unscaled: True
-reset_goal_state: True
-reset_goal_state_in_oder: False
-follow_scripted: False
+init_steps: 0 #4000  - steps without training
+num_train_steps: 1000000 # - total nr of training steps 
+col_sampling_freq: 10000 # Every n-th steps policy generates data for distillation
+col_training_samples: 800 # multiple of stepsize (400) - number of samples for each distillation trigger (above)
+col_training_warmup: 8000 # steps before collective distllation
+train_worker: True # training worker?
+use_unscaled: True # unscaled actions
+reset_goal_state: True # resets teh env goal after each episode
+reset_goal_state_in_oder: False # fixed order or randomly
+follow_scripted: False # scripted policy?
+early_stopping_threshold: 0.99
+early_stopping_window: 100
+
 
 # --- record ---
 num_recording_steps: 6000

@@ -17,8 +17,8 @@ builder:
   actor_optimizer_cfg: ${worker.optimizers.actor}
   critic_optimizer_cfg: ${worker.optimizers.critic}
   discount: 0.99
-  init_temperature: 0.01
-  actor_update_freq: 1 #2
-  critic_tau: 0.005 # 0.01
+  init_temperature: 1 #0.01
+  actor_update_freq: 2 #1
+  critic_tau:  0.005 # 0.01
   critic_target_update_freq: 2 #2
   encoder_tau: 0.05

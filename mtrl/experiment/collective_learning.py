@@ -34,6 +34,10 @@ class Experiment(collective_experiment.Experiment):
         self.metrics_to_track = {
             x[0] for x in self.config.metrics["train"] if not x[0].endswith("_")
         }
+        # Early stopping:
+        from collections import deque
+        self.success_history = deque(maxlen=self.config.experiment.early_stopping_window)
+
 
     def build_envs(self) -> Tuple[EnvsDictType, EnvMetaDataType]:
         """Build environments and return env-related metadata"""
@@ -273,6 +277,7 @@ class Experiment(collective_experiment.Experiment):
                 )
 
             if step % self.max_episode_steps == 0:
+                self.logger.log("train/episode", episode, step) # moved up here
                 if step > 0:
                     if "success" in self.metrics_to_track:
                         success = (success > 0).astype("float")
@@ -295,6 +300,13 @@ class Experiment(collective_experiment.Experiment):
                     start_time = time.time()
                     self.logger.dump(step)
 
+                    # EARLY STOPPING: stop training if success rate is good enough
+                    self.success_history.append(success.mean())
+                    if len(self.success_history) == 10 and np.mean(self.success_history) >= exp_config.early_stopping_threshold:
+                        print(f"Early stopping triggered at step {step} with avg success over 10 evals: {np.mean(self.success_history):.2f}")
+                        break
+
+
                 # evaluate agent periodically
                 if step % exp_config.eval_freq == 0:
                     self.evaluate_vec_env_of_tasks(
@@ -305,8 +317,9 @@ class Experiment(collective_experiment.Experiment):
                 episode_reward = np.full(shape=vec_env.num_envs, fill_value=0.0)
                 if "success" in self.metrics_to_track:
                     success = np.full(shape=vec_env.num_envs, fill_value=0.0)
+                
+                #self.logger.log("train/episode", episode, step)  
 
-                self.logger.log("train/episode", episode, step)
 
                 if step % exp_config.save_freq == 0:
                     if exp_config.save.model:

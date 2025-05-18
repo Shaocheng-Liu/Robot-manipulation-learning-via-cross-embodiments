@@ -8,7 +8,7 @@ builder:
     should_perform_reward_normalization: True
 dummy:
   _target_: metaworld.MT1
-  env_name: pick-place-v1
+  env_name: metaworl10d
 description:
   reach-v1: Reach a goal position. Randomize the goal positions.
   push-v1: Push the puck to a goal. Randomize puck and goal positions.
