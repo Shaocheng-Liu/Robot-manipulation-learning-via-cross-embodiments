@@ -1,4 +1,0 @@
-dataorderseed 8541952
-datasetName UnknownDatasetName
-nBatch 4
-nLap 20.0
