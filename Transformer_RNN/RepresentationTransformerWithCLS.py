@@ -737,11 +737,11 @@ def save_info_dict(save_path, new_output_path=None):
 
 def save_bnpy_model(save_path, current_dict):
     if os.path.exists(current_dict) and os.path.isdir(current_dict):
-        if os.path.exists(save_path + 'save/'):
-            shutil.rmtree(save_path + 'save/')
+        if os.path.exists(save_path + '/save'):
+            shutil.rmtree(save_path + '/save')
         print(f"Folder at {current_dict} already exists")
-    shutil.copytree(current_dict, save_path + 'save/')
-    save_info_dict(save_path + 'save/', save_path + 'save/')
+    shutil.copytree(current_dict, save_path + '/save')
+    save_info_dict(save_path + '/save', save_path + '/save')
     save_comps_parameters(save_path + '/data')
 
 def save_comps_parameters(save_path):
@@ -865,7 +865,7 @@ mask_prob = 0.2
 mask_unchanged = 0.15
 random_mask_prob = 0.1
 
-bnpy_save_dir = '/home/len1218/documents/BT/framework/Transformer_RNN/bnpy_save/'
+bnpy_save_dir = '/home/len1218/documents/BT/framework/Transformer_RNN/bnpy_save'
 gamma0=5.0
 num_lap=20
 sF=1. #0.1
@@ -918,7 +918,7 @@ seed=2
 
 embedding_num = 3_000 #20_000
 model_path = 'Transformer_RNN/checkpoints/representation_cls_transformer_checkpoint.pth'
-dataset_path = 'Transformer_RNN/decision_tf_dataset/recorded_envs/'
+#dataset_path = 'Transformer_RNN/decision_tf_dataset/recorded_envs/'
 dataset_path = 'Transformer_RNN/decision_tf_dataset/buffer_distill/'
 #dataset_path = 'Transformer_RNN/decision_tf_dataset/recorded_faucet/'
 #dataset_path = 'Transformer_RNN/decision_tf_dataset/eval_embodiments/'
@@ -934,6 +934,41 @@ val_dataset_path = 'Transformer_RNN/decision_tf_dataset/buffer_distill/'
 
 embeddings_path = 'Transformer_RNN/embedding_log/emb.pth'
 log_path = 'Transformer_RNN/tensorboard_log'
+
+######################################################################
+
+import torch, numpy as np, builtins
+def log_blue(msg):
+    print(f"\033[34m{msg}\033[0m")
+
+log_blue("[SAVE] Replay buffer to ./save/path")
+
+_orig_save = torch.save
+def save_with_log(obj, f, *args, **kwargs):
+    log_blue(f"[TORCH SAVE] → {f}")
+    return _orig_save(obj, f, *args, **kwargs)
+torch.save = save_with_log
+
+_orig_load = torch.load
+def load_with_log(f, *args, **kwargs):
+    log_blue(f"[TORCH LOAD] ← {f}")
+    return _orig_load(f, *args, **kwargs)
+torch.load = load_with_log
+
+# Similarly for np.save / np.load
+np_save = np.save
+np_load = np.load
+
+def logged_np_save(file, arr, *args, **kwargs):
+    log_blue(f"[NP SAVE] → {file}")
+    return np_save(file, arr, *args, **kwargs)
+np.save = logged_np_save
+
+def logged_np_load(file, *args, **kwargs):
+    log_blue(f"[NP LOAD] ← {file}")
+    return np_load(file, *args, **kwargs)
+np.load = logged_np_load
+
 
 ######################################################################
 
@@ -976,7 +1011,7 @@ if __name__ == "__main__":
     if should_continue:
         load_model(encoder, prediction_head_state, prediction_head_action, prediction_head_reward, prediction_head_cls, model_path)
     if should_continue_bnpy:
-        load_bnpy_model(bnpy_save_dir + 'save/')
+        load_bnpy_model(bnpy_save_dir + '/save')
 
     # Creating optimizer and loss function
     opt = torch.optim.Adam(list(encoder.parameters()) + list(prediction_head_state.parameters()) + \

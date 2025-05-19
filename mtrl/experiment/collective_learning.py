@@ -151,6 +151,25 @@ class Experiment(collective_experiment.Experiment):
         else:
             raise NotImplemented
 
+    def save_all_buffers_and_models(self, step):
+        print("Running cleanup after early stopping ...")
+        exp_config = self.config.experiment
+        for i in range(self.num_envs):
+            self.agent[i].save(
+                self.model_dir[i],
+                step=step,
+                retain_last_n=exp_config.save.model.retain_last_n,
+            )
+            self.replay_buffer[i].save(
+                self.buffer_dir[i],
+                size_per_chunk=exp_config.save.buffer.size_per_chunk,
+                num_samples_to_save=exp_config.save.buffer.num_samples_to_save,
+            )
+            self.replay_buffer_distill_tmp[i].save(
+                self.buffer_dir_distill_tmp[i],
+                size_per_chunk=exp_config.save.buffer.size_per_chunk,
+                num_samples_to_save=exp_config.save.buffer.num_samples_to_save,
+            )
     def run_training_worker(self):
         """Run the experiment."""
         exp_config = self.config.experiment
@@ -302,8 +321,8 @@ class Experiment(collective_experiment.Experiment):
 
                     # EARLY STOPPING: stop training if success rate is good enough
                     self.success_history.append(success.mean())
-                    if len(self.success_history) == 10 and np.mean(self.success_history) >= exp_config.early_stopping_threshold:
-                        print(f"Early stopping triggered at step {step} with avg success over 10 evals: {np.mean(self.success_history):.2f}")
+                    if len(self.success_history) == exp_config.early_stopping_window and np.mean(self.success_history) >= exp_config.early_stopping_threshold:
+                        print(f"Early stopping triggered at step {step} with avg success over {exp_config.early_stopping_window} evals: {np.mean(self.success_history):.2f}")
                         break
 
 
@@ -356,6 +375,8 @@ class Experiment(collective_experiment.Experiment):
             self.evaluate_vec_env_of_tasks(
                 vec_env=self.envs["eval"], step=exp_config.num_train_steps+1+i, episode=episode, agent="worker"
             )
+        
+        self.save_all_buffers_and_models(step)
 
         print(f"Creating the DistilledReplayBuffer - {self.replay_buffer_distill_tmp[0].idx} samples collected")
 
@@ -552,20 +573,8 @@ class Experiment(collective_experiment.Experiment):
 
         vec_env = self.envs["train"]
 
-        episode_reward, episode_step, done = [
-            np.full(shape=vec_env.num_envs, fill_value=fill_value)
-            for fill_value in [0.0, 0, True]
-        ]  # (num_envs, 1)
-
-        if "success" in self.metrics_to_track:
-            success = np.full(shape=vec_env.num_envs, fill_value=0.0)
-
-        info = {}
-
         assert self.start_step >= 0
-        episode = self.start_step // self.max_episode_steps
 
-        col_obs = vec_env.reset()
 
         action = np.asarray([self.action_space.sample() for _ in range(vec_env.num_envs)])
 

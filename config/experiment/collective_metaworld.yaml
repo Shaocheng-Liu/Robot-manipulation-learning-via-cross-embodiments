@@ -15,8 +15,8 @@ use_unscaled: True # unscaled actions
 reset_goal_state: True # resets teh env goal after each episode
 reset_goal_state_in_oder: False # fixed order or randomly
 follow_scripted: False # scripted policy?
-early_stopping_threshold: 0.99
-early_stopping_window: 100
+early_stopping_threshold: 1
+early_stopping_window: 80
 
 
 # --- record ---
@@ -50,8 +50,8 @@ start_weight: 1.0
 use_scripted_mu: False
 
 #------------ evaluate_collective_transformer -------------
-evaluate_transformer: "collective_network" # collective_network / agent / scripted
-evaluate_episodes: 50
+evaluate_transformer: "agent" #"collective_network" # collective_network / agent / scripted
+evaluate_episodes: 100
 evaluate_critic_rounds: 5
 recording_eval_episodes: 1
 

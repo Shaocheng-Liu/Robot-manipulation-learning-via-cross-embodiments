@@ -60,6 +60,9 @@ mtenv
 # Uncomment this to ignore YAML configs if needed (optional)
 # *.yaml
 
-Transformer_RNN/bnpy_save/save
-Transformer_RNN/bnpy_save/0/1
 Transformer_RNN/tensorboard_log
+Transformer_RNN/embedding_log
+Transformer_RNN/decision_tf_dataset/buffer_distill/
+ransformer_RNN/bnpy_save/data/
+Transformer_RNN/bnpy_save/
+

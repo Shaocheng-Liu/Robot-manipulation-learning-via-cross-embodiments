@@ -252,6 +252,7 @@ class DistilledReplayBuffer(object):
             self.q_target[start_idx:end_idx],
         ]
         print(f"Saving replay buffer at {path}")
+        os.makedirs(os.path.dirname(path), exist_ok=True)
         torch.save(payload, path)
 
     def min_max_normalize(self, tensor, min_value, max_value):

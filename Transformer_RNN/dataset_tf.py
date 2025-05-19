@@ -128,10 +128,76 @@ def load_and_preprocess_buffer(path, buffer_name, arm_count):
 
     return states, rewards, actions, policy_mu, task_obs, task_arm
 
+
+
+
+
+
+######################################################################
+
+import torch, numpy as np, builtins
+def log_blue(msg):
+    print(f"\033[34m{msg}\033[0m")
+
+log_blue("[SAVE] Replay buffer to ./save/path")
+
+_orig_save = torch.save
+def save_with_log(obj, f, *args, **kwargs):
+    log_blue(f"[TORCH SAVE] → {f}")
+    return _orig_save(obj, f, *args, **kwargs)
+torch.save = save_with_log
+
+_orig_load = torch.load
+def load_with_log(f, *args, **kwargs):
+    log_blue(f"[TORCH LOAD] ← {f}")
+    return _orig_load(f, *args, **kwargs)
+torch.load = load_with_log
+
+# Similarly for np.save / np.load
+np_save = np.save
+np_load = np.load
+
+def logged_np_save(file, arr, *args, **kwargs):
+    log_blue(f"[NP SAVE] → {file}")
+    return np_save(file, arr, *args, **kwargs)
+np.save = logged_np_save
+
+def logged_np_load(file, *args, **kwargs):
+    log_blue(f"[NP LOAD] ← {file}")
+    return np_load(file, *args, **kwargs)
+np.load = logged_np_load
+
+
+######################################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 if __name__ == "__main__":
     sys.path.append(os.path.abspath(os.path.join('..', 'mtrl')))
     from mtrl.col_replay_buffer import DistilledReplayBuffer
-    path_data = '/home/len1218/documents/BT/framework'
+    project_root = '/home/len1218/documents/BT/framework/logs'
     path_data = project_root + '/experiment_test/buffer/buffer_distill/'
     safe_path = 'Transformer_RNN/decision_tf_dataset/buffer_distill/'
     #safe_path_tra = 'Transformer_RNN/replay_buffer_dataset_tra/'

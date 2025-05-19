@@ -266,7 +266,7 @@ class Experiment(checkpointable.Checkpointable):
                 )
 
                 self.col_model_dir = utils.make_dir(
-                    os.path.join(self.config.setup.save_dir, "evaluation_models/")
+                    os.path.join(self.config.setup.save_dir, "evaluation_models")
                 )
 
                 self.col_start_step = self.col_agent.load_latest_step(model_dir=self.col_model_dir)
