@@ -919,7 +919,7 @@ seed=2
 embedding_num = 3_000 #20_000
 model_path = 'Transformer_RNN/checkpoints/representation_cls_transformer_checkpoint.pth'
 #dataset_path = 'Transformer_RNN/decision_tf_dataset/recorded_envs/'
-dataset_path = 'Transformer_RNN/decision_tf_dataset/buffer_distill/'
+dataset_path = 'Transformer_RNN/decision_tf_dataset/train/'
 #dataset_path = 'Transformer_RNN/decision_tf_dataset/recorded_faucet/'
 #dataset_path = 'Transformer_RNN/decision_tf_dataset/eval_embodiments/'
 #dataset_path = 'Transformer_RNN/decision_tf_dataset/kuka_saywer/'
@@ -928,7 +928,7 @@ dataset_path = 'Transformer_RNN/decision_tf_dataset/buffer_distill/'
 #dataset_path = 'Transformer_RNN/decision_tf_dataset/distill+saywer/'
 #dataset_path = 'Transformer_RNN/decision_tf_dataset/expert_30/'
 
-val_dataset_path = 'Transformer_RNN/decision_tf_dataset/buffer_distill/'
+val_dataset_path = 'Transformer_RNN/decision_tf_dataset/validation/'
 #val_dataset_path = 'Transformer_RNN/decision_tf_dataset/recorded_faucet/'
 #val_dataset_path = 'Transformer_RNN/decision_tf_dataset/eval_embodiments/'
 
@@ -1041,7 +1041,9 @@ if __name__ == "__main__":
         print(f"Training reconstruction loss: {rec_loss:.4f} | Training contrastive loss: {con_loss:.4f} | Time: {time.time() - start_time}")
         print(f"Validation reconstructionloss: {val_rec_loss:.4f} | Validation contrastive loss: {val_con_loss:.4f} \n")
 
+        print("jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj")
         if should_safe:
+            print("ssssssssssssssssssssssssssssssssssssssssssss")
             save_model(encoder, prediction_head_state, prediction_head_action, prediction_head_reward, prediction_head_cls, model_path)
 
         start_time = time.time()

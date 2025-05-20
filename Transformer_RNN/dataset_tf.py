@@ -93,6 +93,7 @@ def load_and_preprocess_buffer(path, buffer_name, arm_count):
         capacity=2_000_000,
         batch_size=1, 
         device=torch.device('cuda'), 
+        dpmm_batch_size=1,
         normalize_rewards=False
     )
     replay_buffer.load(save_dir=path + buffer_name)
@@ -197,9 +198,9 @@ np.load = logged_np_load
 if __name__ == "__main__":
     sys.path.append(os.path.abspath(os.path.join('..', 'mtrl')))
     from mtrl.col_replay_buffer import DistilledReplayBuffer
-    project_root = '/home/len1218/documents/BT/framework/logs'
-    path_data = project_root + '/experiment_test/buffer/buffer_distill/'
-    safe_path = 'Transformer_RNN/decision_tf_dataset/buffer_distill/'
+    project_root = '/home/len1218/documents/BT/framework'
+    path_data = project_root + '/logs/experiment_test/buffer/buffer_distill/'
+    safe_path = 'Transformer_RNN/decision_tf_dataset/'
     #safe_path_tra = 'Transformer_RNN/replay_buffer_dataset_tra/'
     #subdicts = ['perfect_data/'] # 'distill/', 'saywer/' | 'new_init/' 'distill/' 'expert/' 'kuka/' 'saywer/' 'distill_all/'
     subdicts = ['train/','validation/' ] # 'distill/', 'saywer/' | 'new_init/' 'distill/' 'expert/' 'kuka/' 'saywer/' 'distill_all/'
