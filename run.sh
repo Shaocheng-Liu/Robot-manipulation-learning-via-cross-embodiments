@@ -188,55 +188,54 @@ fi
 #############################################################################################
 
 
-if false; then
-    # train experts
-    train_task reach-v2 100000 worker.actor_update_freq=1
-    #train_task push-v2 900000
-    #train_task pick-place-v2 2400000
-    train_task door-open-v2 1000000
-    #train_task drawer-open-v2 500000  # maybe more samples
-    train_task drawer-close-v2 200000
-    #train_task button-press-topdown-v2 500000 # may need some finetuning
-    #train_task peg-insert-side-v2 1300000
-    train_task window-open-v2 300000
-    #train_task window-close-v2 400000 # weird solution
+# train experts
+train_task reach-v2 100000 worker.actor_update_freq=1
+#train_task push-v2 900000
+#train_task pick-place-v2 2400000
+train_task door-open-v2 1000000
+#train_task drawer-open-v2 500000  # maybe more samples
+train_task drawer-close-v2 200000
+#train_task button-press-topdown-v2 500000 # may need some finetuning
+#train_task peg-insert-side-v2 1300000
+train_task window-open-v2 300000
+#train_task window-close-v2 400000 # weird solution
 
-    # prepare dataset for col network
-    online_distill reach-v2
-    #online_distill push-v2
-    #online_distill pick-place-v2
-    online_distill door-open-v2
-    #online_distill drawer-open-v2
-    online_distill drawer-close-v2
-    #online_distill button-press-topdown-v2
-    #online_distill peg-insert-side-v2
-    online_distill window-open-v2
-    #online_distill window-close-v2
+# prepare dataset for col network
+online_distill reach-v2
+#online_distill push-v2
+#online_distill pick-place-v2
+online_distill door-open-v2
+#online_distill drawer-open-v2
+online_distill drawer-close-v2
+#online_distill button-press-topdown-v2
+#online_distill peg-insert-side-v2
+online_distill window-open-v2
+#online_distill window-close-v2
 
-    # split and mv dataset for trajectory transformer training
-    split_buffer reach-v2
-    #split_buffer push-v2
-    #split_buffer pick-place-v2
-    split_buffer door-open-v2
-    #split_buffer drawer-open-v2
-    split_buffer drawer-close-v2
-    #split_buffer button-press-topdown-v2
-    #split_buffer peg-insert-side-v2
-    split_buffer window-open-v2
-    #split_buffer window-close-v2
+# split and mv dataset for trajectory transformer training
+split_buffer reach-v2
+#split_buffer push-v2
+#split_buffer pick-place-v2
+split_buffer door-open-v2
+#split_buffer drawer-open-v2
+split_buffer drawer-close-v2
+#split_buffer button-press-topdown-v2
+#split_buffer peg-insert-side-v2
+split_buffer window-open-v2
+#split_buffer window-close-v2
 
-    # split and mv dataset for col network training
-    split_online_buffer reach-v2
-    #split_online_buffer push-v2
-    #split_online_buffer pick-place-v2
-    split_online_buffer door-open-v2
-    #split_online_buffer drawer-open-v2
-    split_online_buffer drawer-close-v2
-    #split_online_buffer button-press-topdown-v2
-    #split_online_buffer peg-insert-side-v2
-    split_online_buffer window-open-v2
-    #split_online_buffer window-close-v2
-fi
+# split and mv dataset for col network training
+split_online_buffer reach-v2
+#split_online_buffer push-v2
+#split_online_buffer pick-place-v2
+split_online_buffer door-open-v2
+#split_online_buffer drawer-open-v2
+split_online_buffer drawer-close-v2
+#split_online_buffer button-press-topdown-v2
+#split_online_buffer peg-insert-side-v2
+split_online_buffer window-open-v2
+#split_online_buffer window-close-v2
+
 # evaluate single agents
 evaluate_task reach-v2 # -> 96/100
 #evaluate_task push-v2
@@ -321,3 +320,4 @@ echo "RESULTS collective network:"
 grep -r Evaluation logs/results/col
 echo "RESULTS student:"
 grep -r Evaluation logs/results/student
+
