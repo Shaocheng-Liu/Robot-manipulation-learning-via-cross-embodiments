@@ -1,3 +1,4 @@
+### Removing models ###
 rm_model(){
     local task_name="$1"
     if [[ -z "$task_name" ]]; then
@@ -26,6 +27,74 @@ rm_col_model(){
     echo "Removing col_model!"
     rm logs/experiment_test/model_dir/model_col/*
 }
+
+
+### Training models ###
+train_task(){
+    local task_name="$1"
+    local nr_steps="$2"
+    shift 2  # Remove the first two arguments from the list
+
+    if [[ -z "$task_name" || -z "$nr_steps" ]]; then
+        echo "Usage: train_task <task-name> <nr-steps> [additional args]"
+        return 1
+    fi
+
+    echo "Training expert on task: $task_name with $nr_steps steps"
+    echo "Additional args: $@"
+
+    python3 -u main.py \
+        setup=metaworld \
+        env=metaworld-mt1 \
+        worker.multitask.num_envs=1 \
+        experiment.mode=train_worker \
+        env.benchmark.env_name="${task_name}" \
+        experiment.num_train_steps="${nr_steps}" \
+        "$@"
+}
+
+online_distill(){
+    local task_name="$1"
+
+    if [[ -z "$task_name" ]]; then
+        echo "Usage: $0 <task-name>"
+        return 1
+    fi
+
+    echo "Distill online: $task_name"
+
+    python3 -u main.py \
+        setup=metaworld \
+        env=metaworld-mt1 \
+        worker.multitask.num_envs=1 \
+        experiment.mode=online_distill_collective_transformer \
+        env.benchmark.env_name="${task_name}"
+}
+
+train_student(){
+    local task_name="$1"
+    local nr_steps="$2"
+    shift 2  # Remove the first two arguments from the list
+
+    if [[ -z "$task_name" || -z "$nr_steps" ]]; then
+        echo "Usage: train_student <task-name> <nr-steps> [additional args]"
+        return 1
+    fi
+
+    echo "Training student on task: $task_name with $nr_steps steps"
+    echo "Additional args: $@"
+
+    python3 -u main.py \
+        setup=metaworld \
+        env=metaworld-mt1 \
+        worker.multitask.num_envs=1 \
+        experiment.mode=train_student \
+        env.benchmark.env_name="${task_name}" \
+        experiment.num_train_steps="${nr_steps}" \
+        "$@"
+}
+
+### Evaluating models ###
 evaluate_task() {
     local task_name="$1"
     if [[ -z "$task_name" ]]; then
@@ -71,51 +140,20 @@ evaluate_student() {
         experiment.evaluate_transformer="agent" | tee -a $result_path
 }
 
-train_task(){
+evaluate_col_agent(){
     local task_name="$1"
-    local nr_steps="$2"
-    shift 2  # Remove the first two arguments from the list
-
-    if [[ -z "$task_name" || -z "$nr_steps" ]]; then
-        echo "Usage: train_task <task-name> <nr-steps> [additional args]"
+    if [[ -z "$task_name" ]]; then
+        echo "Usage: $0 <task-name>"
         return 1
     fi
 
-    echo "Training expert on task: $task_name with $nr_steps steps"
-    echo "Additional args: $@"
-
-    python3 -u main.py \
-        setup=metaworld \
-        env=metaworld-mt1 \
-        worker.multitask.num_envs=1 \
-        experiment.mode=train_worker \
-        env.benchmark.env_name="${task_name}" \
-        experiment.num_train_steps="${nr_steps}" \
-        "$@"
+    echo "Evaluating task: $task_name"
+    local result_path="logs/results/col/$task_name"
+    python3 -u main.py setup=metaworld env=metaworld-mt1 worker.multitask.num_envs=1 experiment.mode=evaluate_collective_transformer experiment.evaluate_transformer="collective_network"  env.benchmark.env_name="$task_name" | tee -a $result_path
 }
 
-train_student(){
-    local task_name="$1"
-    local nr_steps="$2"
-    shift 2  # Remove the first two arguments from the list
 
-    if [[ -z "$task_name" || -z "$nr_steps" ]]; then
-        echo "Usage: train_student <task-name> <nr-steps> [additional args]"
-        return 1
-    fi
-
-    echo "Training student on task: $task_name with $nr_steps steps"
-    echo "Additional args: $@"
-
-    python3 -u main.py \
-        setup=metaworld \
-        env=metaworld-mt1 \
-        worker.multitask.num_envs=1 \
-        experiment.mode=train_student \
-        env.benchmark.env_name="${task_name}" \
-        experiment.num_train_steps="${nr_steps}" \
-        "$@"
-}
+### Utils ###
 split_buffer(){
     local task_name="$1"
     if [[ -z "$task_name" ]]; then
@@ -130,26 +168,8 @@ split_buffer(){
         --val    ${PROJECT_ROOT}/Transformer_RNN/dataset/validation/buffer_distill_${task_name}_seed_1
 }
 
-online_distill(){
-    local task_name="$1"
-
-    if [[ -z "$task_name" ]]; then
-        echo "Usage: $0 <task-name>"
-        return 1
-    fi
-
-    echo "Distill online: $task_name"
-
-    python3 -u main.py \
-        setup=metaworld \
-        env=metaworld-mt1 \
-        worker.multitask.num_envs=1 \
-        experiment.mode=online_distill_collective_transformer \
-        env.benchmark.env_name="${task_name}"
-}
 
 split_online_buffer(){
-    local oject_root="/home/len1218/documents/BT/framework"
     local task_name="$1"
     if [[ -z "$task_name" ]]; then
         echo "Usage: $0 <task-name>"
@@ -163,6 +183,7 @@ split_online_buffer(){
         --train  logs/experiment_test/buffer/collective_buffer/train/online_buffer_${task_name}_seed_1 \
         --val    logs/experiment_test/buffer/collective_buffer/validation/online_buffer_${task_name}_seed_1
 }
+
 
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
@@ -254,17 +275,6 @@ python3 Transformer_RNN/RepresentationTransformerWithCLS.py
 # train col network
 python3 -u main.py setup=metaworld env=metaworld-mt1 worker.multitask.num_envs=1 experiment.mode=distill_collective_transformer 
 
-evaluate_col_agent(){
-    local task_name="$1"
-    if [[ -z "$task_name" ]]; then
-        echo "Usage: $0 <task-name>"
-        return 1
-    fi
-
-    echo "Evaluating task: $task_name"
-    local result_path="logs/results/col/$task_name"
-    python3 -u main.py setup=metaworld env=metaworld-mt1 worker.multitask.num_envs=1 experiment.mode=evaluate_collective_transformer experiment.evaluate_transformer="collective_network"  env.benchmark.env_name="$task_name" | tee -a $result_path
-}
 
 
 
