@@ -189,7 +189,7 @@ fi
 
 
 # train experts
-train_task reach-v2 100000 worker.actor_update_freq=1
+train_task reach-v2 100000 worker.builder.actor_update_freq=1
 #train_task push-v2 900000
 #train_task pick-place-v2 2400000
 train_task door-open-v2 1000000
