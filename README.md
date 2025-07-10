@@ -123,7 +123,10 @@ cd framework
 pyenv install 3.8 
  ~/.pyenv/versions/3.8.20/bin/python3 -m venv venv
 
+# set env variable to set project root
+echo "export PROJECT_ROOT=$(pwd)" >> venv/bin/activate
 source venv/bin/activate
+
 pip install -r requirements/dev.txt
 pip install mujoco==3.2.3
 
@@ -149,16 +152,13 @@ pip install numpy==1.23.5
 pip install bnpy
 
 cd ..
-sed -i "s|^project_root: .*|project_root: $(pwd)|" config/collective_config.yaml
-sed -i "s|project_root = .*|path_data = '$(pwd)'|" Transformer_RNN/dataset_tf.py
-sed -i "s|^bnpy_save_dir = .*|bnpy_save_dir = '$(pwd)/Transformer_RNN/bnpy_save/'|" Transformer_RNN/RepresentationTransformerWithCLS.py
 pip install -e .
 ```
 ## Run the code
 
 ### Config
 
-Our code uses Hydra to manage the configuration for the experiments. The config can be found in the config-folder. The most important settings to check before running the code is:
+Our code uses Hydra to manage the configuration for the experiments. The config can be found in the `config`-folder. The most important settings to check before running the code is:
 
 * experiment/collective_metaworld.yaml: Specify the training mode and the details for training; supported modes are: train_worker/online_distill_collective_transformer/distill_collective_transformer/evaluate_collective_transformer/train_student/train_student_finetuning/record
 
@@ -167,6 +167,7 @@ Our code uses Hydra to manage the configuration for the experiments. The config 
 * The remaining experiment settings and the hyperparameter of the model can be found in their respective folder in the config-folder
 
 ### Execution
+A full example on how to run the code can be found in `run.sh`. It provides for most tasks the perfect hyperparameters and bash wrapper to execute single tasks more convenient. Additionally it shows in which files the input and outputs are expected.  
 
 1. **Experiment mode Train expert**: Train an expert on a task. While training collect regular experience samples for later training of the transformer trajectory encoder
 
