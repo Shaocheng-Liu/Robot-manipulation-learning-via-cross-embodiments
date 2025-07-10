@@ -223,63 +223,63 @@ mkdir -p ${PROJECT_ROOT}/logs/results/student
 
 # train experts
 train_task reach-v2 100000 worker.builder.actor_update_freq=1
-#train_task push-v2 900000
-#train_task pick-place-v2 2400000
+train_task push-v2 900000
+train_task pick-place-v2 2400000
 train_task door-open-v2 1000000
 train_task drawer-open-v2 500000  # maybe more samples
 train_task drawer-close-v2 200000
-#train_task button-press-topdown-v2 500000 # may need some finetuning
-#train_task peg-insert-side-v2 1300000
+train_task button-press-topdown-v2 500000 # may need some finetuning
+train_task peg-insert-side-v2 1300000
 train_task window-open-v2 300000
-#train_task window-close-v2 400000 # weird solution
+train_task window-close-v2 400000 # weird solution
 
 # prepare dataset for col network
 online_distill reach-v2
-#online_distill push-v2
-#online_distill pick-place-v2
+online_distill push-v2
+online_distill pick-place-v2
 online_distill door-open-v2
 online_distill drawer-open-v2
 online_distill drawer-close-v2
-#online_distill button-press-topdown-v2
-#online_distill peg-insert-side-v2
+online_distill button-press-topdown-v2
+online_distill peg-insert-side-v2
 online_distill window-open-v2
-#online_distill window-close-v2
+online_distill window-close-v2
 
 # split and mv dataset for trajectory transformer training
 split_buffer reach-v2
-#split_buffer push-v2
-#split_buffer pick-place-v2
+split_buffer push-v2
+split_buffer pick-place-v2
 split_buffer door-open-v2
 split_buffer drawer-open-v2
 split_buffer drawer-close-v2
-#split_buffer button-press-topdown-v2
-#split_buffer peg-insert-side-v2
+split_buffer button-press-topdown-v2
+split_buffer peg-insert-side-v2
 split_buffer window-open-v2
-#split_buffer window-close-v2
+split_buffer window-close-v2
 
 # split and mv dataset for col network training
 split_online_buffer reach-v2
-#split_online_buffer push-v2
-#split_online_buffer pick-place-v2
+split_online_buffer push-v2
+split_online_buffer pick-place-v2
 split_online_buffer door-open-v2
 split_online_buffer drawer-open-v2
 split_online_buffer drawer-close-v2
-#split_online_buffer button-press-topdown-v2
-#split_online_buffer peg-insert-side-v2
+split_online_buffer button-press-topdown-v2
+split_online_buffer peg-insert-side-v2
 split_online_buffer window-open-v2
-#split_online_buffer window-close-v2
+split_online_buffer window-close-v2
 
 # evaluate single agents
 evaluate_task reach-v2 # -> 96/100
-#evaluate_task push-v2
-#evaluate_task pick-place-v2
+evaluate_task push-v2
+evaluate_task pick-place-v2
 evaluate_task door-open-v2 # -> 100/100
 evaluate_task drawer-open-v2
 evaluate_task drawer-close-v2 # -> 100/100
-#evaluate_task button-press-topdown-v2
-#evaluate_task peg-insert-side-v2
+evaluate_task button-press-topdown-v2
+evaluate_task peg-insert-side-v2
 evaluate_task window-open-v2 # -> 98/100
-#evaluate_task window-close-v2
+evaluate_task window-close-v2
 
 
 # train trajectoryTransformer
@@ -299,40 +299,40 @@ python3 -u main.py setup=metaworld env=metaworld-mt1 worker.multitask.num_envs=1
 
 
 evaluate_col_agent reach-v2
-#evaluate_col_agent push-v2
-#evaluate_col_agent pick-place-v2
+evaluate_col_agent push-v2
+evaluate_col_agent pick-place-v2
 evaluate_col_agent door-open-v2
 evaluate_col_agent drawer-open-v2
 evaluate_col_agent drawer-close-v2
-#evaluate_col_agent button-press-topdown-v2
-#evaluate_col_agent peg-insert-side-v2
+evaluate_col_agent button-press-topdown-v2
+evaluate_col_agent peg-insert-side-v2
 evaluate_col_agent window-open-v2
-#evaluate_col_agent window-close-v2
+evaluate_col_agent window-close-v2
 
 
 
 train_student reach-v2
-#train_student push-v2
-#train_student pick-place-v2
+train_student push-v2
+train_student pick-place-v2
 train_student door-open-v2
 train_student drawer-open-v2
 train_student drawer-close-v2
-#train_student button-press-topdown-v2
-#train_student peg-insert-side-v2
+train_student button-press-topdown-v2
+train_student peg-insert-side-v2
 train_student window-open-v2
-#train_student window-close-v2
+train_student window-close-v2
 
 
 evaluate_student reach-v2
-#evaluate_student push-v2
-#evaluate_student pick-place-v2
+evaluate_student push-v2
+evaluate_student pick-place-v2
 evaluate_student door-open-v2
 evaluate_student drawer-open-v2
 evaluate_student drawer-close-v2
-#evaluate_student button-press-topdown-v2
-#evaluate_student peg-insert-side-v2
+evaluate_student button-press-topdown-v2
+evaluate_student peg-insert-side-v2
 evaluate_student window-open-v2
-#evaluate_student window-close-v2
+evaluate_student window-close-v2
 
 
 print_results
