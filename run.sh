@@ -1,5 +1,4 @@
 rm_model(){
-    local project_root="/home/len1218/documents/BT/framework"
     local task_name="$1"
     if [[ -z "$task_name" ]]; then
         echo "Usage: rm_model <task-name>"
@@ -13,7 +12,6 @@ rm_model(){
     rm logs/experiment_test/buffer/buffer_distill_tmp/buffer_distill_tmp_${task_name}_seed_1/*
 }
 rm_student(){
-    local project_root="/home/len1218/documents/BT/framework"
     local task_name="$1"
     if [[ -z "$task_name" ]]; then
         echo "Usage: rm_model <task-name>"
@@ -26,11 +24,9 @@ rm_student(){
 
 rm_col_model(){
     echo "Removing col_model!"
-    local project_root="/home/len1218/documents/BT/framework"
     rm logs/experiment_test/model_dir/model_col/*
 }
 evaluate_task() {
-    local project_root="/home/len1218/documents/BT/framework"
     local task_name="$1"
     if [[ -z "$task_name" ]]; then
         echo "Usage: evaluate_task <task-name>"
@@ -39,8 +35,8 @@ evaluate_task() {
 
     echo "Evaluating task: $task_name"
 
-    rm ${project_root}/logs/experiment_test/evaluation_models/*
-    cp ${project_root}/logs/experiment_test/model_dir/model_${task_name}_seed_1/* ${project_root}/logs/experiment_test/evaluation_models/
+    rm ${PROJECT_ROOT}/logs/experiment_test/evaluation_models/*
+    cp ${PROJECT_ROOT}/logs/experiment_test/model_dir/model_${task_name}_seed_1/* ${PROJECT_ROOT}/logs/experiment_test/evaluation_models/
 
     local result_path="logs/results/worker/$task_name"
 
@@ -54,7 +50,6 @@ evaluate_task() {
 }
 
 evaluate_student() {
-    local project_root="/home/len1218/documents/BT/framework"
     local task_name="$1"
     if [[ -z "$task_name" ]]; then
         echo "Usage: evaluate_task <task-name>"
@@ -63,8 +58,8 @@ evaluate_student() {
 
     echo "Evaluating task: $task_name"
 
-    rm ${project_root}/logs/experiment_test/evaluation_models/*
-    cp ${project_root}/logs/experiment_test/model_dir/student_model_${task_name}_seed_1/* ${project_root}/logs/experiment_test/evaluation_models/
+    rm ${PROJECT_ROOT}/logs/experiment_test/evaluation_models/*
+    cp ${PROJECT_ROOT}/logs/experiment_test/model_dir/student_model_${task_name}_seed_1/* ${PROJECT_ROOT}/logs/experiment_test/evaluation_models/
 
     local result_path="logs/results/student/$task_name"
     python3 -u main.py \
@@ -77,7 +72,6 @@ evaluate_student() {
 }
 
 train_task(){
-    local project_root="/home/len1218/documents/BT/framework"
     local task_name="$1"
     local nr_steps="$2"
     shift 2  # Remove the first two arguments from the list
@@ -101,7 +95,6 @@ train_task(){
 }
 
 train_student(){
-    local project_root="/home/len1218/documents/BT/framework"
     local task_name="$1"
     local nr_steps="$2"
     shift 2  # Remove the first two arguments from the list
@@ -124,7 +117,6 @@ train_student(){
         "$@"
 }
 split_buffer(){
-    local project_root="/home/len1218/documents/BT/framework"
     local task_name="$1"
     if [[ -z "$task_name" ]]; then
         echo "Usage: $0 <task-name>"
@@ -133,13 +125,12 @@ split_buffer(){
 
     echo "Evaluating task: $task_name"
     python split_buffer_files.py \
-        --source ${project_root}/logs/experiment_test/buffer/buffer_distill/buffer_distill_${task_name}_seed_1 \
-        --train  ${project_root}/Transformer_RNN/dataset/train/buffer_distill_${task_name}_seed_1 \
-        --val    ${project_root}/Transformer_RNN/dataset/validation/buffer_distill_${task_name}_seed_1
+        --source ${PROJECT_ROOT}/logs/experiment_test/buffer/buffer_distill/buffer_distill_${task_name}_seed_1 \
+        --train  ${PROJECT_ROOT}/Transformer_RNN/dataset/train/buffer_distill_${task_name}_seed_1 \
+        --val    ${PROJECT_ROOT}/Transformer_RNN/dataset/validation/buffer_distill_${task_name}_seed_1
 }
 
 online_distill(){
-    local project_root="/home/len1218/documents/BT/framework"
     local task_name="$1"
 
     if [[ -z "$task_name" ]]; then
@@ -187,6 +178,9 @@ fi
 #       execution                                                                           #
 #############################################################################################
 
+mkdir -p logs/results/worker
+mkdir -p logs/results/col
+mkdir -p logs/results/student
 
 # train experts
 train_task reach-v2 100000 worker.builder.actor_update_freq=1
@@ -261,7 +255,6 @@ python3 Transformer_RNN/RepresentationTransformerWithCLS.py
 python3 -u main.py setup=metaworld env=metaworld-mt1 worker.multitask.num_envs=1 experiment.mode=distill_collective_transformer 
 
 evaluate_col_agent(){
-    local project_root="/home/len1218/documents/BT/framework"
     local task_name="$1"
     if [[ -z "$task_name" ]]; then
         echo "Usage: $0 <task-name>"

@@ -45,4 +45,4 @@ defaults:
   - logger: mtrl
   - metrics: ${defaults.0.setup}
   - logbook: mtrl
-project_root: /home/len1218/documents/BT/framework
+project_root: ${env:PROJECT_ROOT}

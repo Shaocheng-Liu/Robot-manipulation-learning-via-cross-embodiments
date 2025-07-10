@@ -865,7 +865,9 @@ mask_prob = 0.2
 mask_unchanged = 0.15
 random_mask_prob = 0.1
 
-bnpy_save_dir = '/home/len1218/documents/BT/framework/Transformer_RNN/bnpy_save'
+project_root = os.environ.get("PROJECT_ROOT")
+bnpy_save_dir = project_root + '/Transformer_RNN/bnpy_save'
+
 gamma0=5.0
 num_lap=20
 sF=1. #0.1

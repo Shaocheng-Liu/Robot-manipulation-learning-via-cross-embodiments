@@ -173,7 +173,7 @@ np.load = logged_np_load
 if __name__ == "__main__":
     sys.path.append(os.path.abspath(os.path.join('..', 'mtrl')))
     from mtrl.col_replay_buffer import DistilledReplayBuffer
-    project_root = '/home/len1218/documents/BT/framework'
+    project_root = os.environ.get("PROJECT_ROOT")
     path_data = project_root + "/Transformer_RNN/dataset/"
     safe_path = 'Transformer_RNN/decision_tf_dataset/'
     subdicts = ['train/','validation/' ]
