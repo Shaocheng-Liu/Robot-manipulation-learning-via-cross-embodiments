@@ -63,6 +63,8 @@ mtenv
 Transformer_RNN/tensorboard_log
 Transformer_RNN/embedding_log
 Transformer_RNN/decision_tf_dataset/buffer_distill/
-ransformer_RNN/bnpy_save/data/
+Transformer_RNN/bnpy_save/data/
 Transformer_RNN/bnpy_save/
+Transformer_RNN/decision_tf_dataset
+Transformer_RNN/dataset
 
