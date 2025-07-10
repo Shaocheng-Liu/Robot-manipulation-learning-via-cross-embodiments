@@ -58,6 +58,10 @@ class ReplayBuffer(object):
     def is_empty(self):
         return self.idx == 0
 
+    def __len__(self):
+        return self.capacity if self.full else self.idx
+
+
     def add(self, env_obs, action, reward, next_env_obs, done, task_obs):
         np.copyto(self.env_obses[self.idx], env_obs)
         np.copyto(self.actions[self.idx], action)

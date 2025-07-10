@@ -83,6 +83,9 @@ class TransformerReplayBuffer(object):
     def is_empty(self):
         return self.idx == 0
 
+    def __len__(self):
+        return self.capacity if self.full else self.idx
+
     def add(self, env_obs, next_env_obs, action, reward, done, task_obs, encoding, q_value, mu, log_std):
         if env_obs.shape[0]==39 and self.compressed_state:
             env_obs = np.concatenate((env_obs[:18], env_obs[36:]))
@@ -275,7 +278,7 @@ class TransformerReplayBuffer(object):
             self.policy_log_std.reshape(-1,4)[start_idx:end_idx],
             self.q_target.reshape(-1,1)[start_idx:end_idx],
         ]
-        print(f"Saving replay buffer at {path}")
+        print(f"Saving transformer replay buffer at {path}")
         torch.save(payload, path)
 
     def min_max_normalize(self, tensor, min_value, max_value):
@@ -330,10 +333,10 @@ class TransformerReplayBuffer(object):
                 q_target[start:end] = payload[9][:select_till_index]
                 self.idx = end # removed - 1
                 start = end
-                print(f"Loaded replay buffer from path: {path})")
+                print(f"Loaded transformer replay buffer from path: {path})")
             except EOFError as e:
                 print(
-                    f"Skipping loading replay buffer from path: {path} due to error: {e}"
+                    f"Skipping loading transformer replay buffer from path: {path} due to error: {e}"
                 )
         if self.normalize_rewards:
             self.max_reward = np.max(rewards[:self.idx])
@@ -413,10 +416,10 @@ class TransformerReplayBuffer(object):
                     q_target[start:end] = payload[9][:select_till_index]
                     self.idx = end # removed - 1
                     start = end
-                    print(f"Loaded replay buffer from path: {path})")
+                    print(f"Loaded transformer replay buffer from path: {path})")
                 except EOFError as e:
                     print(
-                        f"Skipping loading replay buffer from path: {path} due to error: {e}"
+                        f"Skipping loading transformer replay buffer from path: {path} due to error: {e}"
                     )
         if self.normalize_rewards:
             self.max_reward = np.max(rewards[:self.idx])

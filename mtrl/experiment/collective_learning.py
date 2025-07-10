@@ -1,5 +1,6 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
 """`Experiment` class manages the lifecycle of a multi-task model."""
+import random
 
 import time
 from typing import Dict, List, Tuple
@@ -148,28 +149,34 @@ class Experiment(collective_experiment.Experiment):
             self.run_distilling_student_online()
         elif self.config.experiment.mode == 'train_student_finetuning':
             self.run_train_student_finetuning()
+        elif self.config.experiment.mode == 'distill_policy':
+            self.distill_policy()
         else:
             raise NotImplemented
 
     def save_all_buffers_and_models(self, step):
-        print("Running cleanup after early stopping ...")
+        print("Saving all buffers and models ...")
         exp_config = self.config.experiment
         for i in range(self.num_envs):
-            self.agent[i].save(
-                self.model_dir[i],
-                step=step,
-                retain_last_n=exp_config.save.model.retain_last_n,
-            )
-            self.replay_buffer[i].save(
-                self.buffer_dir[i],
-                size_per_chunk=exp_config.save.buffer.size_per_chunk,
-                num_samples_to_save=exp_config.save.buffer.num_samples_to_save,
-            )
-            self.replay_buffer_distill_tmp[i].save(
-                self.buffer_dir_distill_tmp[i],
-                size_per_chunk=exp_config.save.buffer.size_per_chunk,
-                num_samples_to_save=exp_config.save.buffer.num_samples_to_save,
-            )
+            if exp_config.save.model:
+                self.agent[i].save(
+                    self.model_dir[i],
+                    step=step,
+                    retain_last_n=exp_config.save.model.retain_last_n,
+                )
+            if exp_config.save.buffer.should_save:
+                self.replay_buffer[i].save(
+                    self.buffer_dir[i],
+                    size_per_chunk=exp_config.save.buffer.size_per_chunk,
+                    num_samples_to_save=exp_config.save.buffer.num_samples_to_save,
+                )
+                self.replay_buffer_distill_tmp[i].save(
+                    self.buffer_dir_distill_tmp[i],
+                    size_per_chunk=exp_config.save.buffer.size_per_chunk,
+                    num_samples_to_save=exp_config.save.buffer.num_samples_to_save,
+                )
+
+
     def run_training_worker(self):
         """Run the experiment."""
         exp_config = self.config.experiment
@@ -198,7 +205,8 @@ class Experiment(collective_experiment.Experiment):
         action = np.asarray([self.action_space.sample() for _ in range(vec_env.num_envs)])
 
         train_mode = ["train" for _ in range(vec_env.num_envs)]
-
+        
+        step = exp_config.num_train_step
         for step in range(self.start_step, exp_config.num_train_steps):
             if step < exp_config.init_steps:
                 action = np.asarray(
@@ -341,26 +349,7 @@ class Experiment(collective_experiment.Experiment):
 
 
                 if step % exp_config.save_freq == 0:
-                    if exp_config.save.model:
-                        for i in range(self.num_envs):
-                            self.agent[i].save(
-                                self.model_dir[i],
-                                step=step,
-                                retain_last_n=exp_config.save.model.retain_last_n,
-                            )
-                    if exp_config.save.buffer.should_save:
-                        for i in range(self.num_envs):
-                            self.replay_buffer[i].save(
-                                self.buffer_dir[i],
-                                size_per_chunk=exp_config.save.buffer.size_per_chunk,
-                                num_samples_to_save=exp_config.save.buffer.num_samples_to_save,
-                            )
-                            self.replay_buffer_distill_tmp[i].save(
-                                self.buffer_dir_distill_tmp[i],
-                                size_per_chunk=exp_config.save.buffer.size_per_chunk,
-                                num_samples_to_save=exp_config.save.buffer.num_samples_to_save,
-                            )
-
+                    self.save_all_buffers_and_models(step)
                 if step % self.config.experiment.save_video_freq == 0 and self.config.experiment.save_video and step > 0:
                     print('Recording videos ...')
                     self.record_videos(eval_agent="worker", tag=f"step{step}")
@@ -375,8 +364,8 @@ class Experiment(collective_experiment.Experiment):
             self.evaluate_vec_env_of_tasks(
                 vec_env=self.envs["eval"], step=exp_config.num_train_steps+1+i, episode=episode, agent="worker"
             )
-        
-        self.save_all_buffers_and_models(step)
+        if step != None:
+            self.save_all_buffers_and_models(step)
 
         print(f"Creating the DistilledReplayBuffer - {self.replay_buffer_distill_tmp[0].idx} samples collected")
 
@@ -1433,3 +1422,165 @@ class Experiment(collective_experiment.Experiment):
 
         """
         raise NotImplementedError
+
+    def generate_data_from_col_agent(self, tasks: List[str], num_episodes_per_task: int = 5) -> None:
+        """Generate rollouts by running the collective agent policy for each task, using numpy sequences."""
+        seq_len = self.seq_len
+        action_dim = self.action_shape
+
+        for task_idx, task_name in enumerate(tasks):
+            task_data = random.choice(self.env_name_task_dict[task_name])
+            self.envs['train'].call('set_task', task_data)
+
+            result = self.evaluate_transformer(
+                agent=self.col_agent, vec_env=self.envs["eval"], step=step, episode=episode, seq_len=self.seq_len, sample_actions=(step==0), reward_unscaled=exp_config.use_unscaled
+            )
+
+            for ep in range(num_episodes_per_task):
+                obs = self.envs['train'].reset()
+                done = False
+                # initialize numpy buffers
+                state_buf = []  # list of np arrays shape (state_dim,)
+                action_buf = []  # list of np arrays shape (action_dim,)
+                reward_buf = []  # list of floats
+
+                while not done:
+                    # get raw obs numpy
+                    raw = obs['env_obs']
+                    if hasattr(raw, 'cpu'):
+                        raw_np = raw[0].cpu().numpy()
+                    else:
+                        raw_np = raw[0]
+                    # slice state dims
+                    s = np.concatenate([raw_np[:18], raw_np[36:]], axis=-1)
+
+                    # append zero for first step
+                    if not action_buf:
+                        action_buf.append(np.zeros(action_dim, dtype=np.float32))
+                        reward_buf.append(0.0)
+                    state_buf.append(s)
+
+                                        # build fixed-length numpy sequences
+                    # determine state dimension from raw slice
+                    state_dim = s.shape[0]
+                    seq_s = np.zeros((seq_len, state_dim), dtype=np.float32)
+                    seq_a = np.zeros((seq_len, action_dim), dtype=np.float32)
+                    seq_r = np.zeros((seq_len, 1), dtype=np.float32)
+                    buf_len = len(state_buf)
+                    if buf_len >= seq_len:
+                        seq_s[:] = np.stack(state_buf[-seq_len:], axis=0)
+                        seq_a[:] = np.stack(action_buf[-seq_len:], axis=0)
+                        seq_r[:] = np.array(reward_buf[-seq_len:], dtype=np.float32).reshape(seq_len,1)
+                    else:
+                        seq_s[-buf_len:] = np.stack(state_buf, axis=0)
+                        seq_a[-buf_len:] = np.stack(action_buf, axis=0)
+                        seq_r[-buf_len:] = np.array(reward_buf, dtype=np.float32).reshape(buf_len,1)
+
+                    # convert sequences to torch once
+                    s_batch = torch.from_numpy(seq_s).unsqueeze(0).to(self.device)
+                    a_batch = torch.from_numpy(seq_a).unsqueeze(0).to(self.device)
+                    r_batch = torch.from_numpy(seq_r).unsqueeze(0).to(self.device)
+                    t_batch = torch.tensor([[task_idx]], device=self.device)
+
+                    with agent_utils.eval_mode(self.col_agent):
+                        mu, log_std, q_val = self.col_agent.calculate_q_targets_expert_action(
+                            states=s_batch, actions=a_batch, rewards=r_batch, task_ids=t_batch
+                        )
+                    action_np = mu[0].cpu().numpy()
+
+                    next_obs, rewards, dones, infos = self.envs['train'].step(action_np)
+                    reward_val = float(rewards[0])
+                    done = bool(dones[0])
+
+                    # get next obs
+                    raw_next = next_obs['env_obs']
+                    if hasattr(raw_next, 'cpu'):
+                        next_np = raw_next[0].cpu().numpy()
+                    else:
+                        next_np = raw_next[0]
+                    # slice next state
+                    s_next = np.concatenate([next_np[:18], next_np[36:]], axis=-1)
+
+                    # add to buffer
+                    self.replay_buffer.add(
+                        env_obs=s,
+                        action=action_np[0],
+                        reward=np.array([reward_val], dtype=np.float32),
+                        next_env_obs=s_next,
+                        done=done,
+                        task_obs=np.array([task_idx], dtype=np.int64)
+                    )
+
+                    # update numpy buffers
+                    state_buf.append(s_next)
+                    action_buf.append(action_np[0])
+                    reward_buf.append(reward_val)
+                    obs = next_obs
+        print("Data generation complete.")
+
+
+    def distill_policy(self):
+        """Run distillation from col_agent to student using KL divergence on logits."""
+        exp_config = self.config.experiment
+        #assert hasattr(self, "col_agent") and hasattr(self, "student_agent")
+
+        self.student_agent.train()  # Only the student needs to train
+
+        optimizer = self.student_agent._optimizers["actor"]
+
+        distill_steps = exp_config.distill_steps
+        batch_size = exp_config.batch_size
+        temperature = exp_config.temperature
+        start_time = time.time()
+
+        if self.replay_buffer.is_empty():
+            self.generate_data_from_col_agent(["reach-v2"],num_episodes_per_task=5)
+
+
+        for step in range(distill_steps):
+            print(f"Buffer size: {len(self.replay_buffer)}, batch_size: {batch_size}")
+            if len(self.replay_buffer) < batch_size:
+                print("Buffer not sufficiently filled. Abort or wait.")
+                return
+
+            sample: ReplayBufferSample = self.replay_buffer.sample(batch_size)
+            obs = sample.observation.to(self.device)
+
+            # Get teacher logits (e.g., Q-values or action logits)
+            with torch.no_grad():
+                teacher_logits = self.col_agent.get_action_logits(obs) / temperature
+                teacher_probs = torch.softmax(teacher_logits, dim=-1)
+
+            # Get student logits
+            student_logits = self.student_agent.get_action_logits(obs) / temperature
+            student_log_probs = torch.log_softmax(student_logits, dim=-1)
+
+            # KL Divergence loss
+            loss = torch.nn.functional.kl_div(
+                student_log_probs,
+                teacher_probs,
+                reduction='batchmean',
+                log_target=False
+            ) * (temperature ** 2)
+
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            if step % exp_config.log_interval == 0:
+                self.logger.log("distill/loss", loss.item(), step)
+                self.logger.log("distill/duration", time.time() - start_time, step)
+                self.logger.dump(step)
+                print(f"[Distill Step {step}] Loss: {loss.item():.4f}")
+                start_time = time.time()
+
+            if exp_config.save.model and step % exp_config.save_freq == 0:
+                self.student_agent.save(
+                    self.student_model_dir,
+                    step=step,
+                    retain_last_n=exp_config.save.model.retain_last_n,
+                )
+
+        self.close_envs()
+        print("Finished policy distillation.")
+

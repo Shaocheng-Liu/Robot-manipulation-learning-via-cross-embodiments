@@ -71,6 +71,9 @@ class DistilledReplayBuffer(object):
     def is_empty(self):
         return self.idx == 0
 
+    def __len__(self):
+        return self.capacity if self.full else self.idx
+
     def add(self, env_obs, action, reward, next_env_obs, done, task_obs, q_value, mu, log_std):
         np.copyto(self.env_obses[self.idx], env_obs)
         np.copyto(self.actions[self.idx], action)
@@ -251,7 +254,7 @@ class DistilledReplayBuffer(object):
             self.policy_log_std[start_idx:end_idx],
             self.q_target[start_idx:end_idx],
         ]
-        print(f"Saving replay buffer at {path}")
+        print(f"Saving distilled replay buffer at {path}")
         os.makedirs(os.path.dirname(path), exist_ok=True)
         torch.save(payload, path)
 
@@ -286,10 +289,10 @@ class DistilledReplayBuffer(object):
                 self.q_target[start:end] = payload[8][:select_till_index]
                 self.idx = end # removed - 1
                 start = end
-                print(f"Loaded replay buffer from path: {path})")
+                print(f"Loaded distilled replay buffer from path: {path})")
             except EOFError as e:
                 print(
-                    f"Skipping loading replay buffer from path: {path} due to error: {e}"
+                    f"Skipping loading distilled replay buffer from path: {path} due to error: {e}"
                 )
         self.last_save = self.idx
         if self.normalize_rewards:
@@ -327,10 +330,10 @@ class DistilledReplayBuffer(object):
                     self.q_target[start:end] = payload[8][:select_till_index]
                     self.idx = end - 1
                     start = end
-                    print(f"Loaded replay buffer from path: {path})")
+                    print(f"Loaded distilled replay buffer from path: {path})")
                 except EOFError as e:
                     print(
-                        f"Skipping loading replay buffer from path: {path} due to error: {e}"
+                        f"Skipping loading distilled replay buffer from path: {path} due to error: {e}"
                     )
         self.last_save = self.idx
 

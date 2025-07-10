@@ -403,6 +403,7 @@ class Experiment(checkpointable.Checkpointable):
             if should_resume_experiment:
                 self.start_step = self.student.load_latest_step(model_dir=self.student_model_dir)
                 self.replay_buffer.load(save_dir=self.buffer_dir)
+
         elif self.config.experiment.mode == 'train_student_finetuning':
             # finetuning
             # Student
@@ -444,6 +445,72 @@ class Experiment(checkpointable.Checkpointable):
 
             if self.start_step == 0 or not should_resume_experiment:
                 self.student.load_latest_step(model_dir=col_model_dir)
+        
+        elif self.config.experiment.mode == 'distill_policy':
+            # Instantiate teacher and student agents
+            self.teacher_agent = hydra.utils.instantiate(
+                self.config.transformer_collective_network.builder,
+                env_obs_shape=env_obs_shape,
+                action_shape=action_shape,
+                action_range=[
+                    float(self.action_space.low.min()),
+                    float(self.action_space.high.max()),
+                ],
+                device=self.device,
+            )
+            self.student_agent = hydra.utils.instantiate(
+                self.config.student.builder,
+                env_obs_shape=env_obs_shape,
+                action_shape=action_shape,
+                action_range=[
+                    float(self.action_space.low.min()),
+                    float(self.action_space.high.max()),
+                ],
+                device=self.device,
+            )
+
+            # Load teacher model if needed
+            self.teacher_model_dir = utils.make_dir(
+                os.path.join(self.config.setup.save_dir, "model_dir/model_col")
+            )
+            self.teacher_agent.load_latest_step(model_dir=self.teacher_model_dir)
+
+            # Student model dir
+            self.student_model_dir = utils.make_dir(
+                os.path.join(self.config.setup.save_dir, "model_dir/student_model")
+            )
+
+            # Replay buffer used for distillation
+            self.buffer_dir = utils.make_dir(
+                os.path.join(self.config.setup.save_dir, f"buffer/policy_distill_{self.task_names[0]}_seed_{self.config.setup.seed}")
+            )
+            self.col_agent = hydra.utils.instantiate(
+                self.config.transformer_collective_network.builder,
+                env_obs_shape=env_obs_shape,
+                action_shape=action_shape,
+                action_range=[
+                    float(self.action_space.low.min()),
+                    float(self.action_space.high.max()),
+                ],
+                device=self.device,
+            )
+
+            self.replay_buffer = hydra.utils.instantiate(
+                self.config.replay_buffer.transformer_col_replay_buffer,
+                normalize_rewards=False,
+                capacity=self.config.replay_buffer.replay_buffer['capacity'],
+                batch_size=self.config.replay_buffer.replay_buffer['batch_size'],
+                device=self.device,
+                env_obs_shape=env_obs_shape,
+                task_obs_shape=(1,),
+                action_shape=action_shape,
+                seq_len=self.seq_len,
+                compressed_state= False
+            )
+            self.replay_buffer.load(save_dir=self.buffer_dir)
+
+            self.start_step = 0
+
         else:
             raise NotImplementedError(
                 f"experiment-mode {self.config.experiment.mode} is not supported"

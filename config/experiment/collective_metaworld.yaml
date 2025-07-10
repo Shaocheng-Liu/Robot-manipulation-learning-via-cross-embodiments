@@ -43,8 +43,8 @@ num_student_online_trainsteps: 20000
 
 #------------ train_student -------------
 init_steps_stu2: 4000
-num_student_online_trainsteps2: 50000
-expert_train_step: 50000
+num_student_online_trainsteps2: 1000000
+expert_train_step: 1000000
 constant_expert_weight: 4000
 start_weight: 1.0
 use_scripted_mu: False
@@ -82,3 +82,7 @@ save_video_freq: 500000 #muliple of eval_freq
 envs_to_exclude_during_training: []
 # v2: [0 "reach-v2", 1 "push-v2", 2 "pick-place-v2", 3 "door-open-v2", 4 "drawer-open-v2", 5 "drawer-close-v2", 6 "button-press-topdown-v2", 7 "peg-insert-side-v2", 8 "window-open-v2", 9 "window-close-v2"]
 # ["reach-v2", "push-v2", "pick-place-v2", "door-open-v2", "drawer-open-v2", "drawer-close-v2", "button-press-topdown-v2", "peg-insert-side-v2", "window-open-v2", "window-close-v2"]
+#
+#---------------------distill policy--------------------------
+distill_steps: 200000
+batch_size: 32
