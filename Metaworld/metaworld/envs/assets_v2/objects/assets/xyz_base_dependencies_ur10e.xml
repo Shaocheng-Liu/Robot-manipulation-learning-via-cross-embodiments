@@ -1,0 +1,80 @@
+<mujocoinclude>
+    <compiler angle="radian" autolimits="true" inertiafromgeom="auto" inertiagrouprange="4 5"/>
+    <option integrator="implicitfast"/>
+    <asset>
+      <material class="ur10e" name="black" rgba="0.033 0.033 0.033 1"/>
+      <material class="ur10e" name="jointgray" rgba="0.278 0.278 0.278 1"/>
+      <material class="ur10e" name="linkgray" rgba="0.82 0.82 0.82 1"/>
+      <material class="ur10e" name="urblue" rgba="0.49 0.678 0.8 1"/>
+      <material name="xyz_col" rgba="0.3 0.3 1.0 0.5" shininess="0" specular="0.5"/>
+
+      <mesh file="assets_ur10e/base_0.obj"/>
+      <mesh file="assets_ur10e/base_1.obj"/>
+      <mesh file="assets_ur10e/shoulder_0.obj"/>
+      <mesh file="assets_ur10e/shoulder_1.obj"/>
+      <mesh file="assets_ur10e/shoulder_2.obj"/>
+      <mesh file="assets_ur10e/upperarm_0.obj"/>
+      <mesh file="assets_ur10e/upperarm_1.obj"/>
+      <mesh file="assets_ur10e/upperarm_2.obj"/>
+      <mesh file="assets_ur10e/upperarm_3.obj"/>
+      <mesh file="assets_ur10e/forearm_0.obj"/>
+      <mesh file="assets_ur10e/forearm_1.obj"/>
+      <mesh file="assets_ur10e/forearm_2.obj"/>
+      <mesh file="assets_ur10e/forearm_3.obj"/>
+      <mesh file="assets_ur10e/wrist1_0.obj"/>
+      <mesh file="assets_ur10e/wrist1_1.obj"/>
+      <mesh file="assets_ur10e/wrist1_2.obj"/>
+      <mesh file="assets_ur10e/wrist2_0.obj"/>
+      <mesh file="assets_ur10e/wrist2_1.obj"/>
+      <mesh file="assets_ur10e/wrist2_2.obj"/>
+      <mesh file="assets_ur10e/wrist3.obj"/>
+      <mesh file="../objects/meshes/xyz_base/base.stl" name="base"/>
+      <mesh file="../objects/meshes/xyz_base/eGripperBase.stl" name="eGripperBase"/>
+      <mesh file="../objects/meshes/xyz_base/head.stl" name="head"/>
+    </asset>
+
+    <default>
+      <default class="ur10e">
+        <material specular="0.5" shininess="0.25"/>
+        <joint axis="0 1 0" range="-6.28319 6.28319" armature="0.1"/>
+        <general gaintype="fixed" biastype="affine" ctrlrange="-6.2831 6.2831" gainprm="2000" biasprm="0 -2000 -400"
+          forcerange="-150 150"/>
+        
+        <default class="size4">
+          <joint damping="10"/>
+          <general gainprm="5000" biasprm="0 -5000 -500" forcerange="-330 330"/>
+        </default>
+        
+        <default class="size3">
+          <joint damping="5"/>
+          <general forcerange="-150 150"/>
+          <default class="size3_limited">
+            <joint range="-3.1415 3.1415"/>
+            <general ctrlrange="-3.1415 3.1415"/>
+          </default>
+        </default>
+        
+        <default class="size2">
+          <joint damping="2"/>
+          <general gainprm="1000" biasprm="0 -1000 -200" forcerange="-56 56"/>
+        </default>
+        
+        <default class="visual">
+          <geom type="mesh" contype="0" conaffinity="0" group="2" material="black"/>
+        </default>
+        
+        <default class="collision">
+          <geom type="capsule" group="3"/>
+          <default class="eef_collision">
+            <geom type="cylinder"/>
+          </default>
+        </default>
+        
+        <default class="base_col">
+          <geom conaffinity="1" condim="4" contype="1" group="4" margin="0.001" material="xyz_col" solimp=".8 .9 .01" solref=".02 1"/>
+        </default>
+        
+        <site size="0.001" rgba="1 0 0 1" group="4"/>
+      </default>
+    </default>
+</mujocoinclude>
