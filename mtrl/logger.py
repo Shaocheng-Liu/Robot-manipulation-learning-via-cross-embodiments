@@ -13,6 +13,7 @@ from termcolor import colored
 
 from torch.utils.tensorboard import SummaryWriter
 import datetime
+import wandb
 
 @singledispatch
 def serialize_log(val):
@@ -141,10 +142,19 @@ class Logger(object):
         # use tensorboard as logging #
         ##############################
         self.use_tb = self.config.logger.use_tb
+        self.use_wandb = self.config.logger.use_wandb
         if self.use_tb:
-            self.tb_writer = SummaryWriter(self._log_dir+'/tb_logger_{}'.format(datetime.datetime.now().strftime("%m-%d_%H-%M")))
+            self.tb_writer = SummaryWriter(self._log_dir+'/tb_logger_{}'.format(datetime.datetime.now().strftime("%m-%d_%H-%M")))   
         else:
-            self.tb_writer = None
+            self.tb_writer = None  
+        if self.use_wandb:
+            wandb_config = {
+                "project": self.config.logger.wandb_project,
+                "dir": self._log_dir
+            }  
+            self.wandb_run = wandb.init(**wandb_config)
+        else:
+            self.wandb_run = None
 
         if "metaworld" in self.config.env.name:
             num_envs = int(
@@ -212,7 +222,18 @@ class Logger(object):
         #################################
         if self.use_tb and tb_log:
             self.tb_writer.add_scalar(tag='{}/{}'.format(mode, key), scalar_value=value, global_step=step)
+        if self.use_wandb and self.wandb_run is not None:
+            # 构建适当的指标名称
+            wandb_key = f"{mode}/{key}"
+            self.wandb_run.log({wandb_key: value}, step=step)
 
     def dump(self, step):
         for key in self.mgs:
             self.mgs[key].dump(step, key)
+
+    def close(self):
+        if self.tb_writer is not None:
+            self.tb_writer.close()
+            
+        if self.use_wandb and self.wandb_run is not None:
+            self.wandb_run.finish()

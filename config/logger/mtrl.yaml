@@ -2,3 +2,5 @@
 _target_: mtrl.logger.Logger
 logger_dir: ${setup.save_dir}
 use_tb: True
+use_wandb: True
+wandb_project: "collective_metaworld"
