@@ -1,5 +1,5 @@
 
-<mujoco>
+<!-- <mujoco>
   <include file="../scene/basic_scene.xml"/>
   <include file="../objects/assets/doorlock_dependencies.xml"/>
   <include file="../objects/assets/xyz_base_dependencies_kuka.xml"/>
@@ -33,7 +33,7 @@
     <equality>
         <weld body1="mocap" body2="hand" solref="0.02 1"/>
     </equality>
-</mujoco>
+</mujoco> -->
 
 <!-- pls enable joint pos in saywer_xyz_env.py -->
 <!--
@@ -78,6 +78,42 @@
 <mujoco>
   <include file="../scene/basic_scene.xml"/>
   <include file="../objects/assets/doorlock_dependencies.xml"/>
+  <include file="../objects/assets/xyz_base_dependencies_ur10e.xml"/>
+
+  <worldbody>
+    <include file="../objects/assets/xyz_base_ur10e.xml"/>
+
+    <body name="door" pos="0 0.9 0.15">
+      <include file="../objects/assets/doorlockB.xml"/>
+    </body>
+    
+    <site name="goal" pos="-0.49 0.46 0.15" size="0.02"
+          rgba="0.8 0 0 1"/>
+  </worldbody>
+
+  <contact>
+    <exclude body1="base" body2="shoulder_link"/>
+    <exclude body1="shoulder_link" body2="upper_arm_link"/>
+    <exclude body1="upper_arm_link" body2="forearm_link"/>
+    <exclude body1="forearm_link" body2="wrist_1_link"/>
+    <exclude body1="wrist_1_link" body2="wrist_2_link"/>
+    <exclude body1="wrist_2_link" body2="wrist_3_link"/>
+    <exclude body1="wrist_3_link" body2="hand"/>
+  </contact>
+
+  <actuator>
+    <position ctrllimited="true" ctrlrange="-1 1" joint="r_close" kp="400" user="1"/>
+    <position ctrllimited="true" ctrlrange="-1 1" joint="l_close" kp="400" user="1"/>
+  </actuator>
+
+  <equality>
+    <weld body1="mocap" body2="hand" solref="0.02 1"/>
+  </equality>
+</mujoco>
+
+<mujoco>
+  <include file="../scene/basic_scene.xml"/>
+  <include file="../objects/assets/doorlock_dependencies.xml"/>
   <include file="../objects/assets/xyz_base_dependencies.xml"/>
 
   <worldbody>
@@ -98,4 +134,5 @@
       <weld body1="mocap" body2="hand" solref="0.02 1"/>
   </equality>
 </mujoco>
+
 

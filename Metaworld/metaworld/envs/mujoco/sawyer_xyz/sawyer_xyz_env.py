@@ -354,8 +354,12 @@ class SawyerXYZEnv(SawyerMocapBase, EzPickle):
         """
         qpos = self.data.qpos.flat.copy()
         qvel = self.data.qvel.flat.copy()
-        qpos[9:12] = pos.copy()
-        qvel[9:15] = 0
+        if qpos.size == 16:
+            qpos[9:12] = pos.copy()
+            qvel[9:15] = 0
+        else:
+            qpos[8:11] = pos.copy()
+            qvel[8:14] = 0
         self.set_state(qpos, qvel)
 
     def _get_site_pos(self, site_name: str) -> npt.NDArray[np.float64]:

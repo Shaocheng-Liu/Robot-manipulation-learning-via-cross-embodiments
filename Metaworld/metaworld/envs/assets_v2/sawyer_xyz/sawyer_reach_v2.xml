@@ -1,5 +1,5 @@
 
-<!-- <mujoco>
+<mujoco>
   <include file="../scene/basic_scene.xml"/>
   <include file="../objects/assets/block_dependencies.xml"/>
   <include file="../objects/assets/xyz_base_dependencies_kuka.xml"/>
@@ -38,7 +38,7 @@
     <equality>
         <weld body1="mocap" body2="hand" solref="0.02 1"/>
     </equality>
-</mujoco> -->
+</mujoco>
 
 <!-- pls enable joint pos in saywer_xyz_env.py -->
 <!--
@@ -85,7 +85,7 @@
 </mujoco>
 -->
 
-<mujoco>
+<!-- <mujoco>
     <include file="../scene/basic_scene.xml"/>
     <include file="../objects/assets/block_dependencies.xml"/>
     <include file="../objects/assets/xyz_base_dependencies.xml"/>
@@ -113,7 +113,7 @@
     <equality>
         <weld body1="mocap" body2="hand" solref="0.02 1"></weld>
     </equality>
-</mujoco>
+</mujoco> -->
 
 <!-- <mujoco>
   <include file="../scene/basic_scene.xml"/>
