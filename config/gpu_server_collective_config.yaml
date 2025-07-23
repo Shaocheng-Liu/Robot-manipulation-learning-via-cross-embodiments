@@ -1,0 +1,61 @@
+# GPU Server Optimized Configuration
+# Use this as the main config for training on multi-GPU servers
+# Example usage: python3 -u main.py --config-name=gpu_server_collective_config
+
+defaults:
+  - setup: gpu_server_metaworld
+  - experiment: gpu_server_collective_metaworld
+  - worker: gpu_server_worker_sac
+  - worker/components: ${defaults.0.setup}_actor
+  - worker/components: ${defaults.0.setup}_critic
+  - worker/components: ${defaults.0.setup}_encoder
+  - worker/components: ${defaults.0.setup}_transition_model
+  - worker/components: ${defaults.0.setup}_mask
+  - worker/components: gpu_server_metaworld_multitask
+  - worker/components: ${defaults.0.setup}_gradnorm
+  - worker/components: ${defaults.0.setup}_task_to_encoder_cluster
+  - worker/optimizers: gpu_server_metaworld_actor
+  - worker/optimizers: gpu_server_metaworld_alpha
+  - worker/optimizers: gpu_server_metaworld_critic
+  - worker/optimizers: ${defaults.0.setup}_decoder
+  - worker/optimizers: ${defaults.0.setup}_encoder
+  
+  - transformer_collective_network: gpu_server_transformer_collective_sac
+  - transformer_collective_network/components: ${defaults.0.setup}_actor
+  - transformer_collective_network/components: ${defaults.0.setup}_critic
+  - transformer_collective_network/components: ${defaults.0.setup}_transformer_encoder
+  - transformer_collective_network/optimizers: gpu_server_metaworld_actor
+  - transformer_collective_network/optimizers: gpu_server_metaworld_critic
+  - transformer_collective_network/optimizers: gpu_server_metaworld_alpha
+  - transformer_collective_network/optimizers: gpu_server_metaworld_transformer_encoder
+  
+  - student: gpu_server_student_sac
+  - student/components: ${defaults.0.setup}_actor
+  - student/components: ${defaults.0.setup}_critic
+  - student/components: ${defaults.0.setup}_encoder
+  - student/components: ${defaults.0.setup}_transition_model
+  - student/components: ${defaults.0.setup}_mask
+  - student/components: gpu_server_metaworld_multitask
+  - student/components: ${defaults.0.setup}_gradnorm
+  - student/components: ${defaults.0.setup}_task_to_encoder_cluster
+  - student/optimizers: gpu_server_metaworld_actor
+  - student/optimizers: gpu_server_metaworld_alpha
+  - student/optimizers: gpu_server_metaworld_critic
+  - student/optimizers: ${defaults.0.setup}_decoder
+  - student/optimizers: ${defaults.0.setup}_encoder
+  
+  - env: ???
+  - replay_buffer: gpu_server_mtrl
+  - logger: mtrl
+  - metrics: ${defaults.0.setup}
+  - logbook: mtrl
+
+project_root: ${env:PROJECT_ROOT}
+
+# GPU-specific runtime optimizations
+hydra:
+  job:
+    chdir: true
+  run:
+    # Enable faster multiprocessing for environments
+    dir: ${setup.save_dir}/hydra_outputs/${experiment.mode}/${now:%Y-%m-%d_%H-%M-%S}

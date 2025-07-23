@@ -188,9 +188,18 @@ A full example on how to run the code can be found in `run.sh`. It provides for 
 * **Different embodiments**: For changing between different robots (Kuka, Sawyer, Panda) please adjust `Metaworld/metaworld/envs/assets_v2/sawyer_xyz/(environment name).xml` and uncomment the robot type you want. For the Panda robot please also additionally uncomment line 689-691 in `Metaworld/metaworld/envs/mujoco/sawyer_xyz/saywer_xyz_env.py`
 
 After setting the configuration for the experiment run the code as follows (for metaworld-mt1):
+
+**Standard Training (single GPU)**:
 ```
 python3 -u main.py setup=metaworld env=metaworld-mt1 worker.multitask.num_envs=1
 ```
+
+**GPU Server Optimized Training (multi-GPU servers like 4x A100)**:
+```
+python3 -u main.py --config-name=gpu_server_collective_config setup=gpu_server_metaworld env=metaworld-mt1 worker.multitask.num_envs=16
+```
+
+For detailed GPU optimization instructions, see [GPU_OPTIMIZATION_GUIDE.md](GPU_OPTIMIZATION_GUIDE.md).
 
 
 ## Acknowledgements
