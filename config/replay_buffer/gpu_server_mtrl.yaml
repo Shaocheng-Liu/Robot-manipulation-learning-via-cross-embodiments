@@ -1,0 +1,35 @@
+# @package _group_
+# GPU Server optimized replay buffer configuration
+# Larger batch sizes and buffer capacities for better GPU utilization
+
+replay_buffer:
+  _target_: mtrl.replay_buffer.ReplayBuffer
+  env_obs_shape: # Will be auto populated
+  action_shape: # Will be auto populated
+  capacity: 500000  # Increased from 140000 for more diverse samples
+  batch_size: 2048  # Increased from 512 for better GPU utilization
+  
+col_replay_buffer:
+  _target_: mtrl.col_replay_buffer.DistilledReplayBuffer
+  env_obs_shape: # Will be auto populated
+  action_shape: # Will be auto populated
+  capacity: 5000000  # Increased from 2000000 for more experience
+  batch_size: 2048   # Increased from 512 for better GPU utilization
+  normalize_rewards: True
+  
+col_tmp_replay_buffer:
+  _target_: mtrl.replay_buffer.ReplayBuffer
+  env_obs_shape: # Will be auto populated
+  action_shape: # Will be auto populated
+  capacity: 5000000  # Increased from 2000000
+  batch_size: 512    # Increased from 128 for better GPU utilization
+  
+transformer_col_replay_buffer:
+  _target_: mtrl.transformer_replay_buffer.TransformerReplayBuffer
+  env_obs_shape: # Will be auto populated
+  action_shape: # Will be auto populated
+  capacity: 5000000  # Increased from 2000000
+  batch_size: 2048   # Increased from 512 for better GPU utilization
+  normalize_rewards: False
+  task_encoding_shape: 6 
+  compressed_state: True

@@ -1,0 +1,96 @@
+# @package _group_
+# GPU Server optimized experiment configuration for MetaWorld
+# Optimized parameters for faster training on multi-GPU servers
+
+name: gpu_server_collective_metaworld
+mode: train_worker # train_worker/online_distill_collective_transformer/distill_collective_transformer/evaluate_collective_transformer/train_student/train_student_finetuning/record
+builder:
+  _target_: mtrl.experiment.${experiment.name}.Experiment
+  
+# --- train_worker (GPU Optimized) ---
+init_steps: 0 #4000  - steps without training
+num_train_steps: 1000000 # - total nr of training steps 
+col_sampling_freq: 5000   # Reduced from 10000 for more frequent data collection
+col_training_samples: 1600 # Increased from 800 - multiple of stepsize (400) - number of samples for each distillation trigger
+col_training_warmup: 4000  # Reduced from 8000 for earlier collective training
+train_worker: True         # training worker?
+use_unscaled: True        # unscaled actions
+reset_goal_state: True    # resets the env goal after each episode
+reset_goal_state_in_oder: False # fixed order or randomly
+follow_scripted: False    # scripted policy?
+early_stopping_threshold: 1
+early_stopping_window: 80
+
+# --- record ---
+num_recording_steps: 6000
+only_scripted_step: 0 #after this only scripted
+scripted_porb: 0.4
+init_record_step: 2000
+
+# --- distill_collective_transformer (GPU Optimized) ---
+num_actor_train_step: 50001 
+num_critic_train_step: 10000 
+
+# --- online_distill_collective_transformer (GPU Optimized) ---
+num_online_train_step: 60001 # 250000
+init_steps_online_tf: 4000    # Reduced from 8000
+follow_col_network: False
+stu_expert_steps: 40000
+actor_update_freq: 1          # Increased from 2 for more frequent updates
+distill_scripted_policy: True
+
+#------------ train_student_finetuning (GPU Optimized) -------------
+init_steps_stu: 2000          # Reduced from 4000
+num_student_online_trainsteps: 20000
+
+#------------ train_student (GPU Optimized) -------------
+init_steps_stu2: 2000         # Reduced from 4000
+num_student_online_trainsteps2: 1000000
+expert_train_step: 1000000
+constant_expert_weight: 4000
+start_weight: 1.0
+use_scripted_mu: False
+
+#------------ evaluate_collective_transformer -------------
+evaluate_transformer: "agent" #"collective_network" # collective_network / agent / scripted
+evaluate_episodes: 100
+evaluate_critic_rounds: 5
+recording_eval_episodes: 1
+
+latent_clustering_num: 1
+col_eval_freq: 500            # Reduced from 1000 for more frequent evaluation
+eval_latent_representation: False
+evaluate_unused: False
+eval_freq: 2000               # Reduced from 4000 for more frequent evaluation
+num_eval_episodes: 10
+should_resume: True
+save: #
+  model:
+    retain_last_n: 1
+    # setting a natural number (say 5) retains the last n (say 5) models.
+    # setting -1 retains all the models.
+    # setting 0 retains no models.
+  buffer:
+    should_save: True
+    size_per_chunk: 50000     # Increased from 20000 for larger chunks
+    num_samples_to_save: -1   # number of samples to save. Set to -1 to save all samples
+    delete_replaybuffer: False # after finish
+save_dir: ${setup.save_dir} 
+save_freq: 10000              # Reduced from 20000 for more frequent saves
+save_freq_transformer: 5000  # Reduced from 10000
+save_video: True
+save_video_freq: 500000       # multiple of eval_freq
+
+envs_to_exclude_during_training: []
+# v2: [0 "reach-v2", 1 "push-v2", 2 "pick-place-v2", 3 "door-open-v2", 4 "drawer-open-v2", 5 "drawer-close-v2", 6 "button-press-topdown-v2", 7 "peg-insert-side-v2", 8 "window-open-v2", 9 "window-close-v2"]
+
+#---------------------distill policy (GPU Optimized)--------------------------
+distill_steps: 200000
+batch_size: 128               # Increased from 32 for better GPU utilization
+
+# GPU Server specific optimizations
+gpu_optimizations:
+  use_amp: True               # Automatic Mixed Precision
+  gradient_accumulation_steps: 1  # Can be increased if memory allows
+  pin_memory: True            # Pin memory for faster data loading
+  num_workers: 8              # Increased number of data loading workers

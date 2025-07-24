@@ -1,0 +1,7 @@
+# @package transformer_collective_network.optimizers.critic
+# GPU Server optimized transformer critic optimizer
+
+_target_: torch.optim.Adam
+lr: 1e-3  # Increased from 3e-4 for larger batch sizes
+betas: [0.9, 0.999]
+weight_decay: 1e-6  # Small weight decay for regularization
