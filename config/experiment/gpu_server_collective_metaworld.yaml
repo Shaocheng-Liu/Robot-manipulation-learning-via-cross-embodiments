@@ -58,10 +58,10 @@ evaluate_critic_rounds: 5
 recording_eval_episodes: 1
 
 latent_clustering_num: 1
-col_eval_freq: 500            # Reduced from 1000 for more frequent evaluation
+col_eval_freq: 1000           
 eval_latent_representation: False
 evaluate_unused: False
-eval_freq: 2000               # Reduced from 4000 for more frequent evaluation
+eval_freq: 4000              
 num_eval_episodes: 10
 should_resume: True
 save: #
@@ -76,8 +76,8 @@ save: #
     num_samples_to_save: -1   # number of samples to save. Set to -1 to save all samples
     delete_replaybuffer: False # after finish
 save_dir: ${setup.save_dir} 
-save_freq: 10000              # Reduced from 20000 for more frequent saves
-save_freq_transformer: 5000  # Reduced from 10000
+save_freq: 20000              # Reduced from 20000 for more frequent saves
+save_freq_transformer: 10000  # Reduced from 10000
 save_video: True
 save_video_freq: 500000       # multiple of eval_freq
 

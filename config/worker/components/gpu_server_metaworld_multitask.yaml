@@ -1,7 +1,7 @@
 # @package worker.multitask
 # GPU Server optimized multitask configuration with increased parallel environments
 
-num_envs: 16  # Increased from ${env.num_envs} for more parallel rollouts
+num_envs: ${env.num_envs}  # Increased from ${env.num_envs} for more parallel rollouts
 should_use_disentangled_alpha: True
 should_use_task_encoder: False
 should_use_multi_head_policy: False

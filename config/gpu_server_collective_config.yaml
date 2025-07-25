@@ -51,11 +51,3 @@ defaults:
   - logbook: mtrl
 
 project_root: ${env:PROJECT_ROOT}
-
-# GPU-specific runtime optimizations
-hydra:
-  job:
-    chdir: true
-  run:
-    # Enable faster multiprocessing for environments
-    dir: ${setup.save_dir}/hydra_outputs/${experiment.mode}/${now:%Y-%m-%d_%H-%M-%S}
