@@ -85,7 +85,7 @@
 </mujoco>
 -->
 
-<!-- <mujoco>
+<mujoco>
     <include file="../scene/basic_scene.xml"/>
     <include file="../objects/assets/block_dependencies.xml"/>
     <include file="../objects/assets/xyz_base_dependencies.xml"/>
@@ -117,9 +117,50 @@
     <equality>
         <weld body1="mocap" body2="hand" solref="0.02 1"></weld>
     </equality>
+</mujoco>
+
+<!-- <mujoco>
+  <include file="../scene/basic_scene.xml"/>
+  <include file="../objects/assets/block_dependencies.xml"/>
+  <include file="../objects/assets/xyz_base_dependencies_ur5e.xml"/>
+
+  <worldbody>
+    <include file="../objects/assets/xyz_base_ur5e.xml"/>
+
+    <body name="obj" pos="0 0.6 0.02">
+      <joint name="objjoint" type="free" limited='false' damping="0." armature="0."/>
+      <inertial pos="0 0 0" mass=".75" diaginertia="8.80012e-04 8.80012e-04 8.80012e-04"/>
+      <geom name="objGeom" type="cylinder" pos="0 0 0" solimp="0.99 0.99 0.01"
+            size="0.02 0.02" rgba="1 0 0 1" solref="0.01 1"
+            contype="1" conaffinity="1" friction="1 0.1 0.002" condim="4" material="block_wood"
+      />
+    </body>
+    
+    <site name="goal" pos="-0.1 0.8 0.2" size="0.02"
+          rgba="0.8 0 0 1"/>
+  </worldbody>
+
+  <contact>
+    <exclude body1="base" body2="shoulder_link"/>
+    <exclude body1="shoulder_link" body2="upper_arm_link"/>
+    <exclude body1="upper_arm_link" body2="forearm_link"/>
+    <exclude body1="forearm_link" body2="wrist_1_link"/>
+    <exclude body1="wrist_1_link" body2="wrist_2_link"/>
+    <exclude body1="wrist_2_link" body2="wrist_3_link"/>
+    <exclude body1="wrist_3_link" body2="hand"/>
+  </contact>
+
+  <actuator>
+    <position ctrllimited="true" ctrlrange="-1 1" joint="r_close" kp="400" user="1"/>
+    <position ctrllimited="true" ctrlrange="-1 1" joint="l_close" kp="400" user="1"/>
+  </actuator>
+
+  <equality>
+    <weld body1="mocap" body2="hand" solref="0.02 1"/>
+  </equality>
 </mujoco> -->
 
-<mujoco>
+<!-- <mujoco>
   <include file="../scene/basic_scene.xml"/>
   <include file="../objects/assets/block_dependencies.xml"/>
   <include file="../objects/assets/xyz_base_dependencies_ur10e.xml"/>
@@ -160,4 +201,4 @@
   <equality>
     <weld body1="mocap" body2="hand" solref="0.02 1"/>
   </equality>
-</mujoco>
+</mujoco> -->

@@ -58,12 +58,14 @@ def build_metaworld_vec_env(
         "benchmark_name": benchmark_name,
         "env_id_to_task_map": env_id_to_task_map,
         "num_copies_per_env": 1,
+        # "num_copies_per_env": 8,
         "should_perform_reward_normalization": True,
     }
 
     funcs_to_make_envs, env_id_to_task_map = get_list_of_func_to_make_metaworld_envs(
         **make_kwargs
     )
+    print(f"[DEBUG] 创建了 {len(funcs_to_make_envs)} 个并行环境")
     env_metadata = {
         "ids": list(range(num_tasks)),
         "mode": [mode for _ in range(num_tasks)],

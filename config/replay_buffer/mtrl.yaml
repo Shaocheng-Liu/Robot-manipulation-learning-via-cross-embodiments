@@ -3,10 +3,10 @@ replay_buffer:
   _target_: mtrl.replay_buffer.ReplayBuffer
   env_obs_shape: # Will be auto populated
   action_shape: # Will be auto populated
-  # capacity: 140000 
-  capacity: 500000
-  # batch_size: 512 
-  batch_size: 2048
+  capacity: 140000 
+  # capacity: 500000
+  batch_size: 512 
+  # batch_size: 2048
   
 col_replay_buffer:
   _target_: mtrl.col_replay_buffer.DistilledReplayBuffer
