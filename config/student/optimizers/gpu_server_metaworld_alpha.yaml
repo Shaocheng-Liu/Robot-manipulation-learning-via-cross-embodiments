@@ -1,6 +1,0 @@
-# @package _group_.alpha
-# GPU Server optimized student alpha optimizer
-
-_target_: torch.optim.Adam
-lr: 1e-3  # Increased from 3e-4 for consistency
-betas: [0.9, 0.999]
