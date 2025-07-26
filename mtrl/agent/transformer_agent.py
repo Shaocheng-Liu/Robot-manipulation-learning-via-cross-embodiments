@@ -625,7 +625,12 @@ class TransformerAgent:
 
         with torch.no_grad():
             if self.additional_input_state:
-                critic_input = torch.cat((task_encoding, states, actions), dim=1)
+                # Use world model to get latent state if enabled
+                if self.use_world_model:
+                    latent_state = self.world_model.encode(states, task_encoding)
+                    critic_input = torch.cat((task_encoding, latent_state, actions), dim=1)
+                else:
+                    critic_input = torch.cat((task_encoding, states, actions), dim=1)
             else:
                 raise NotImplemented
 
@@ -698,9 +703,19 @@ class TransformerAgent:
             
             if self.additional_input_state:
                 current_state = states[:, -1]
-                actor_input = torch.cat((task_encoding, current_state), dim=1)
+                
+                # Use world model to get latent state if enabled
+                if self.use_world_model:
+                    latent_state = self.world_model.encode(current_state, task_encoding)
+                    actor_input = torch.cat((task_encoding, latent_state), dim=1)
+                else:
+                    actor_input = torch.cat((task_encoding, current_state), dim=1)
             else:
-                actor_input = task_encoding
+                if self.use_world_model:
+                    current_state = states[:, -1]
+                    actor_input = self.world_model.encode(current_state, task_encoding)
+                else:
+                    actor_input = task_encoding
                 
             mu, _, _, log_std = self.actor(actor_input)
             mu = mu.clamp(*self.action_range)
@@ -933,6 +948,7 @@ class TransformerAgent:
         if isinstance(replay_buffer_list, list):
             state_list, action_list, reward_list, next_state_list, task_encoding_list = [], [], [], [], []
             for buffer in replay_buffer_list:
+                # Sampling structure: states, actions, rewards, next_states, _, _, _, _, encoding_sample
                 states, actions, rewards, next_states, _, _, _, _, encoding_sample = buffer.sample_new()
                 state_list.append(states)
                 action_list.append(actions)
@@ -945,6 +961,7 @@ class TransformerAgent:
             next_states = torch.cat(next_state_list)
             task_encoding = torch.cat(task_encoding_list)
         else:
+            # Single buffer case
             states, actions, rewards, next_states, _, _, _, _, task_encoding = replay_buffer_list.sample_new()
 
         if self.use_zeros:
