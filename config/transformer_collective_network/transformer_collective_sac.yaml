@@ -33,3 +33,7 @@ builder:
   init_temperature: 0.1
   dropout: 0.
   mse_loss_actor: True
+  # World model parameters
+  use_world_model: False  # Set to True to enable world model
+  world_model_cfg: ${transformer_collective_network.world_model}
+  world_model_optimizer_cfg: ${transformer_collective_network.optimizers.world_model}

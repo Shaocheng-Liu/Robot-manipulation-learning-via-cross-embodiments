@@ -1,0 +1,6 @@
+# @package _global_
+defaults:
+  - metaworld_actor
+  - metaworld_critic
+  - metaworld_transformer_encoder
+  - world_model

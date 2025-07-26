@@ -10,6 +10,7 @@ from mtrl.logger import Logger
 from mtrl.col_replay_buffer import DistilledReplayBuffer, DistilledReplayBufferSample
 from mtrl.agent import utils as agent_utils
 from mtrl.agent.ds.mt_obs import MTObs
+from mtrl.agent.components.world_model import WorldModel
 from mtrl.utils.types import ConfigType, ModelType, TensorType, ModelType, OptimizerType, ComponentType, ParameterType
 from mtrl.utils.utils import is_integer, make_dir
 ComponentOrOptimizerType = Union[ComponentType, OptimizerType]
@@ -49,6 +50,10 @@ class TransformerAgent:
         use_zeros,
         dropout,
         loss_reduction: str = "mean",
+        # World model parameters
+        use_world_model: bool = False,
+        world_model_cfg: Optional[ConfigType] = None,
+        world_model_optimizer_cfg: Optional[ConfigType] = None,
     ):
         self.env_obs_shape = env_obs_shape
         self.action_shape = action_shape
@@ -71,10 +76,34 @@ class TransformerAgent:
         self._opimizer_suffix = "_optimizer"
         self._components: Dict[str, ModelType] = {}
         self._optimizers: Dict[str, OptimizerType] = {}
+        
+        # World model parameters
+        self.use_world_model = use_world_model
 
         # components
+        if self.use_world_model and world_model_cfg is not None:
+            # Initialize world model
+            self.world_model = WorldModel(
+                state_dim=env_obs_shape[0],
+                action_dim=action_shape[0],
+                task_encoding_dim=self.cls_dim,
+                **world_model_cfg
+            ).to(self.device)
+            
+            # When using world model, actor uses latent states
+            actor_input_dim = world_model_cfg.get('latent_dim', 512)
+            if self.additional_input_state:
+                actor_input_dim += self.cls_dim  # Add task encoding dimension
+        else:
+            self.world_model = None
+            actor_input_dim = env_obs_shape[0]
+            if self.additional_input_state:
+                actor_input_dim += self.cls_dim
+
         self.actor = hydra.utils.instantiate(
-            actor_cfg, env_obs_shape=env_obs_shape, action_shape=action_shape,
+            actor_cfg, 
+            env_obs_shape=[actor_input_dim] if self.use_world_model else env_obs_shape, 
+            action_shape=action_shape,
             use_tra_preprocessing=use_tra_preprocessing,
             use_cls_prediction_head=use_cls_prediction_head,
             tra_preprocessing_dim=tra_preprocessing_dim,
@@ -84,7 +113,9 @@ class TransformerAgent:
         ).to(self.device)
 
         self.critic = hydra.utils.instantiate(
-            critic_cfg, env_obs_shape=env_obs_shape, action_shape=action_shape,
+            critic_cfg, 
+            env_obs_shape=[actor_input_dim] if self.use_world_model else env_obs_shape, 
+            action_shape=action_shape,
             use_tra_preprocessing=use_tra_preprocessing,
             use_cls_prediction_head=use_cls_prediction_head,
             tra_preprocessing_dim=tra_preprocessing_dim,
@@ -94,7 +125,9 @@ class TransformerAgent:
         ).to(self.device)
 
         self.critic_target = hydra.utils.instantiate(
-            critic_cfg, env_obs_shape=env_obs_shape, action_shape=action_shape,
+            critic_cfg, 
+            env_obs_shape=[actor_input_dim] if self.use_world_model else env_obs_shape, 
+            action_shape=action_shape,
             use_tra_preprocessing=use_tra_preprocessing,
             use_cls_prediction_head=use_cls_prediction_head,
             tra_preprocessing_dim=tra_preprocessing_dim,
@@ -138,6 +171,9 @@ class TransformerAgent:
             "transformer_encoder": self.task_encoder,
             "tra_preprocessing": self.tra_preprocessing,
         }
+        
+        if self.use_world_model:
+            self._components["world_model"] = self.world_model
 
         # optimizers
         self.actor_optimizer = hydra.utils.instantiate(
@@ -159,6 +195,12 @@ class TransformerAgent:
             "transformer_encoder": self.transformer_encoder_optimizer,
             "log_alpha": self.log_alpha_optimizer,
         }
+        
+        if self.use_world_model and world_model_optimizer_cfg is not None:
+            self.world_model_optimizer = hydra.utils.instantiate(
+                world_model_optimizer_cfg, params=self.get_parameters(name="world_model")
+            )
+            self._optimizers["world_model"] = self.world_model_optimizer
         
         if loss_reduction not in ["mean", "none"]:
             raise ValueError(
@@ -263,8 +305,10 @@ class TransformerAgent:
         """Select/sample the action to perform.
 
         Args:
-            multitask_obs (ObsType): Observation from the multitask environment.
-            mode (List[str]): mode in which to select the action.
+            states: State observations [batch_size, seq_len, state_dim]
+            actions: Action history [batch_size, seq_len-1, action_dim]
+            rewards: Reward history [batch_size, seq_len-1, 1]
+            task_ids: Task identifiers
             sample (bool): sample (if `True`) or select (if `False`) an action.
 
         Returns:
@@ -311,9 +355,19 @@ class TransformerAgent:
             
             if self.additional_input_state:
                 current_state = states[:, -1]
-                actor_input = torch.cat((task_encoding, current_state), dim=1)
+                
+                # Use world model to get latent state if enabled
+                if self.use_world_model:
+                    latent_state = self.world_model.encode(current_state, task_encoding)
+                    actor_input = torch.cat((task_encoding, latent_state), dim=1)
+                else:
+                    actor_input = torch.cat((task_encoding, current_state), dim=1)
             else:
-                actor_input = task_encoding
+                if self.use_world_model:
+                    current_state = states[:, -1]
+                    actor_input = self.world_model.encode(current_state, task_encoding)
+                else:
+                    actor_input = task_encoding
                 
             mu, pi, _, _ = self.actor(actor_input)
             if sample:
@@ -391,9 +445,19 @@ class TransformerAgent:
         
         if self.additional_input_state:
             current_state = states
-            actor_input = torch.cat((task_encoding, current_state), dim=1)
+            
+            # Use world model to get latent state if enabled
+            if self.use_world_model:
+                latent_state = self.world_model.encode(current_state, task_encoding)
+                actor_input = torch.cat((task_encoding, latent_state), dim=1)
+            else:
+                actor_input = torch.cat((task_encoding, current_state), dim=1)
         else:
-            actor_input = task_encoding
+            if self.use_world_model:
+                current_state = states
+                actor_input = self.world_model.encode(current_state, task_encoding)
+            else:
+                actor_input = task_encoding
 
         mu, _, _, log_std = self.actor(actor_input)
 
@@ -469,7 +533,12 @@ class TransformerAgent:
             states, actions, rewards, _, _, _, q_targets, _, task_encoding = replay_buffer_list.sample_new()
 
         if self.additional_input_state:
-            critic_input = torch.cat((task_encoding, states, actions), dim=1)
+            # Use world model to get latent state if enabled
+            if self.use_world_model:
+                latent_state = self.world_model.encode(states, task_encoding)
+                critic_input = torch.cat((task_encoding, latent_state, actions), dim=1)
+            else:
+                critic_input = torch.cat((task_encoding, states, actions), dim=1)
         else:
             raise NotImplemented
 
@@ -841,6 +910,66 @@ class TransformerAgent:
         #    return self.log_alpha[env_index].exp()
         #else:
         return self.log_alpha[0].exp()
+
+    def train_world_model(
+        self,
+        replay_buffer_list: DistilledReplayBuffer,
+        logger: Logger,
+        step: int,
+        **kwargs
+    ) -> None:
+        """Train the world model components.
+        
+        Args:
+            replay_buffer_list: Replay buffer(s) containing training data
+            logger: Logger for metrics
+            step: Training step
+            **kwargs: Additional arguments
+        """
+        if not self.use_world_model:
+            return
+            
+        # Sample data from replay buffer
+        if isinstance(replay_buffer_list, list):
+            state_list, action_list, reward_list, next_state_list, task_encoding_list = [], [], [], [], []
+            for buffer in replay_buffer_list:
+                states, actions, rewards, next_states, _, _, _, _, encoding_sample = buffer.sample_new()
+                state_list.append(states)
+                action_list.append(actions)
+                reward_list.append(rewards)
+                next_state_list.append(next_states)
+                task_encoding_list.append(encoding_sample)
+            states = torch.cat(state_list)
+            actions = torch.cat(action_list)
+            rewards = torch.cat(reward_list)
+            next_states = torch.cat(next_state_list)
+            task_encoding = torch.cat(task_encoding_list)
+        else:
+            states, actions, rewards, next_states, _, _, _, _, task_encoding = replay_buffer_list.sample_new()
+
+        if self.use_zeros:
+            task_encoding = torch.zeros((states.shape[0], self.cls_dim)).to(self.device)
+        
+        # Compute world model losses
+        dynamics_loss, reward_loss, total_loss = self.world_model.compute_loss(
+            state=states,
+            action=actions,
+            next_state=next_states,
+            reward=rewards.unsqueeze(-1) if rewards.dim() == 1 else rewards,
+            task_encoding=task_encoding,
+            reward_bounds=(-10.0, 10.0)  # Can be made configurable
+        )
+        
+        # Optimize world model
+        self._optimizers["world_model"].zero_grad()
+        total_loss.backward()
+        self._optimizers["world_model"].step()
+        
+        # Log metrics
+        if kwargs.get('tb_log', False):
+            logger.log("train/world_model_dynamics_loss", dynamics_loss.item(), step, tb_log=True)
+            logger.log("train/world_model_reward_loss", reward_loss.item(), step, tb_log=True)
+            logger.log("train/world_model_total_loss", total_loss.item(), step, tb_log=True)
 
     def get_component_name_list_for_checkpointing(self) -> List[Tuple[ModelType, str]]:
         """Get the list of tuples of (model, name) from the agent to checkpoint.

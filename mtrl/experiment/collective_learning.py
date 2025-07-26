@@ -1179,6 +1179,11 @@ class Experiment(collective_experiment.Experiment):
 
                 # run distillation updates
                 self.col_agent.distill_actor(self.replay_buffer_distill, self.logger, step, tb_log=True)
+                
+                # train world model if enabled
+                if hasattr(self.col_agent, 'use_world_model') and self.col_agent.use_world_model:
+                    self.col_agent.train_world_model(self.replay_buffer_distill, self.logger, step, tb_log=True)
+                
                 self.col_start_step += 1
 
                 if exp_config.save.model and step % exp_config.save_freq_transformer == 0:
@@ -1198,6 +1203,11 @@ class Experiment(collective_experiment.Experiment):
 
                 # run distillation updates
                 self.col_agent.distill_critic(self.replay_buffer_distill, self.logger, step, tb_log=True, action_space=self.action_space)
+                
+                # train world model if enabled (also during critic training phase)
+                if hasattr(self.col_agent, 'use_world_model') and self.col_agent.use_world_model:
+                    self.col_agent.train_world_model(self.replay_buffer_distill, self.logger, step, tb_log=True)
+                
                 self.col_start_step += 1
 
                 if exp_config.save.model and step % exp_config.save_freq_transformer == 0:
