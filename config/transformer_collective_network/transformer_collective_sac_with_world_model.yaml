@@ -38,11 +38,11 @@ builder:
   use_world_model: True  # Enable world model
   world_model_cfg: 
     latent_dim: 512
-    encoder_layers: 3
-    encoder_hidden_dim: 256
-    dynamics_hidden_dim: 512
-    reward_hidden_dim: 512
+    num_enc_layers: 3
+    enc_dim: 256
+    mlp_dim: 512
     reward_bins: 101
+    simnorm_dim: 8
     reward_bounds: [-10.0, 10.0]
   world_model_optimizer_cfg:
     _target_: torch.optim.Adam

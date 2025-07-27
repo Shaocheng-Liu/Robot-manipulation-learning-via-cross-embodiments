@@ -11,29 +11,68 @@ from mtrl.agent.components import base as base_component
 from mtrl.utils.types import TensorType
 
 
+class SimNorm(nn.Module):
+    """
+    Simplicial normalization.
+    Adapted from https://arxiv.org/abs/2204.00616.
+    """
+
+    def __init__(self, simnorm_dim: int):
+        super().__init__()
+        self.dim = simnorm_dim
+
+    def forward(self, x):
+        shp = x.shape
+        x = x.view(*shp[:-1], -1, self.dim)
+        x = F.softmax(x, dim=-1)
+        return x.view(*shp)
+
+    def __repr__(self):
+        return f"SimNorm(dim={self.dim})"
+
+
 class NormedLinear(nn.Module):
-    """Linear layer with LayerNorm and activation as used in TD-MPC2."""
-    
-    def __init__(self, in_features: int, out_features: int, act: str = "Mish"):
+    """
+    Linear layer with LayerNorm, activation, and optionally dropout.
+    """
+
+    def __init__(self, in_features: int, out_features: int, dropout: float = 0., act=None):
         super().__init__()
         self.linear = nn.Linear(in_features, out_features)
-        self.norm = nn.LayerNorm(out_features)
-        
-        if act == "Mish":
-            self.activation = nn.Mish()
-        elif act == "ReLU":
-            self.activation = nn.ReLU()
-        elif act == "SimNorm":
-            # Simplicial normalization - normalize to unit simplex
-            self.activation = lambda x: F.normalize(x, p=1, dim=-1)
-        else:
-            raise ValueError(f"Unsupported activation: {act}")
-    
-    def forward(self, x: TensorType) -> TensorType:
+        self.ln = nn.LayerNorm(out_features)
+        if act is None:
+            act = nn.Mish(inplace=False)
+        self.act = act
+        self.dropout = nn.Dropout(dropout, inplace=False) if dropout else None
+
+    def forward(self, x):
         x = self.linear(x)
-        x = self.norm(x)
-        x = self.activation(x)
-        return x
+        if self.dropout:
+            x = self.dropout(x)
+        x = self.ln(x)
+        return self.act(x)
+
+    def __repr__(self):
+        repr_dropout = f", dropout={self.dropout.p}" if self.dropout else ""
+        return f"NormedLinear(in_features={self.linear.in_features}, "\
+            f"out_features={self.linear.out_features}, "\
+            f"bias={self.linear.bias is not None}{repr_dropout}, "\
+            f"act={self.act.__class__.__name__})"
+
+
+def mlp(in_dim: int, mlp_dims: List[int], out_dim: int, act=None, dropout: float = 0.):
+    """
+    Basic building block of TD-MPC2.
+    MLP with LayerNorm, Mish activations, and optionally dropout.
+    """
+    if isinstance(mlp_dims, int):
+        mlp_dims = [mlp_dims]
+    dims = [in_dim] + mlp_dims + [out_dim]
+    mlp_layers = nn.ModuleList()
+    for i in range(len(dims) - 2):
+        mlp_layers.append(NormedLinear(dims[i], dims[i+1], dropout=dropout*(i==0)))
+    mlp_layers.append(NormedLinear(dims[-2], dims[-1], act=act) if act else nn.Linear(dims[-2], dims[-1]))
+    return nn.Sequential(*mlp_layers)
 
 
 class WorldModelEncoder(base_component.Component):
@@ -47,8 +86,9 @@ class WorldModelEncoder(base_component.Component):
         state_dim: int,
         task_encoding_dim: int,
         latent_dim: int,
-        num_layers: int = 2,
-        hidden_dim: int = 256,
+        num_enc_layers: int = 2,
+        enc_dim: int = 256,
+        simnorm_dim: int = 8,
     ):
         """Initialize the world model encoder.
         
@@ -56,8 +96,9 @@ class WorldModelEncoder(base_component.Component):
             state_dim: Dimension of the state observation
             task_encoding_dim: Dimension of the task encoding (CLS token)
             latent_dim: Dimension of the latent representation
-            num_layers: Number of hidden layers (2-5 as per TD-MPC2)
-            hidden_dim: Hidden layer dimension
+            num_enc_layers: Number of encoder layers (2-5 as per TD-MPC2)
+            enc_dim: Hidden layer dimension for encoder
+            simnorm_dim: Dimension for simplicial normalization groups
         """
         super().__init__()
         
@@ -68,18 +109,17 @@ class WorldModelEncoder(base_component.Component):
         # Input dimension is state + task encoding
         input_dim = state_dim + task_encoding_dim
         
-        # Build encoder network
-        layers = []
-        in_dim = input_dim
+        # Build encoder network following TD-MPC2:
+        # mlp(cfg.obs_shape[k][0] + cfg.task_dim, max(cfg.num_enc_layers-1, 1)*[cfg.enc_dim], cfg.latent_dim, act=SimNorm(cfg))
+        num_hidden_layers = max(num_enc_layers - 1, 1)
+        hidden_dims = [enc_dim] * num_hidden_layers
         
-        # Hidden layers with NormedLinear
-        for i in range(num_layers):
-            out_dim = hidden_dim if i < num_layers - 1 else latent_dim
-            act = "Mish" if i < num_layers - 1 else "SimNorm"
-            layers.append(NormedLinear(in_dim, out_dim, act=act))
-            in_dim = out_dim
-        
-        self.encoder = nn.Sequential(*layers)
+        self.encoder = mlp(
+            input_dim, 
+            hidden_dims, 
+            latent_dim, 
+            act=SimNorm(simnorm_dim)
+        )
     
     def forward(self, state: TensorType, task_encoding: TensorType) -> TensorType:
         """Encode state and task encoding to latent representation.
@@ -111,7 +151,8 @@ class WorldModelDynamics(base_component.Component):
         latent_dim: int,
         action_dim: int,
         task_encoding_dim: int,
-        hidden_dim: int = 512,
+        mlp_dim: int = 512,
+        simnorm_dim: int = 8,
     ):
         """Initialize the dynamics model.
         
@@ -119,7 +160,8 @@ class WorldModelDynamics(base_component.Component):
             latent_dim: Dimension of the latent representation
             action_dim: Dimension of the action space
             task_encoding_dim: Dimension of the task encoding
-            hidden_dim: Hidden layer dimension
+            mlp_dim: Hidden layer dimension for dynamics MLP
+            simnorm_dim: Dimension for simplicial normalization groups
         """
         super().__init__()
         
@@ -130,11 +172,12 @@ class WorldModelDynamics(base_component.Component):
         # Input is latent + action + task encoding
         input_dim = latent_dim + action_dim + task_encoding_dim
         
-        # 3-layer MLP as per TD-MPC2
-        self.dynamics = nn.Sequential(
-            NormedLinear(input_dim, hidden_dim, act="Mish"),
-            NormedLinear(hidden_dim, hidden_dim, act="Mish"),
-            NormedLinear(hidden_dim, latent_dim, act="SimNorm")
+        # Following TD-MPC2: mlp(cfg.latent_dim + cfg.action_dim + cfg.task_dim, 2*[cfg.mlp_dim], cfg.latent_dim, act=layers.SimNorm(cfg))
+        self.dynamics = mlp(
+            input_dim, 
+            [mlp_dim, mlp_dim],  # Exactly 2 hidden layers with mlp_dim
+            latent_dim, 
+            act=SimNorm(simnorm_dim)
         )
     
     def forward(
@@ -173,7 +216,7 @@ class WorldModelReward(base_component.Component):
         latent_dim: int,
         action_dim: int,
         task_encoding_dim: int,
-        hidden_dim: int = 512,
+        mlp_dim: int = 512,
         reward_bins: int = 101,  # Discretized reward prediction as in TD-MPC2
     ):
         """Initialize the reward model.
@@ -182,7 +225,7 @@ class WorldModelReward(base_component.Component):
             latent_dim: Dimension of the latent representation
             action_dim: Dimension of the action space  
             task_encoding_dim: Dimension of the task encoding
-            hidden_dim: Hidden layer dimension
+            mlp_dim: Hidden layer dimension for reward MLP
             reward_bins: Number of bins for discretized reward prediction
         """
         super().__init__()
@@ -195,11 +238,11 @@ class WorldModelReward(base_component.Component):
         # Input is latent + action + task encoding
         input_dim = latent_dim + action_dim + task_encoding_dim
         
-        # 3-layer MLP with final linear layer (no activation)
-        self.reward_net = nn.Sequential(
-            NormedLinear(input_dim, hidden_dim, act="Mish"),
-            NormedLinear(hidden_dim, hidden_dim, act="Mish"),
-            nn.Linear(hidden_dim, reward_bins)
+        # Following TD-MPC2: mlp(cfg.latent_dim + cfg.action_dim + cfg.task_dim, 2*[cfg.mlp_dim], max(cfg.num_bins, 1))
+        self.reward_net = mlp(
+            input_dim, 
+            [mlp_dim, mlp_dim],  # Exactly 2 hidden layers with mlp_dim
+            max(reward_bins, 1)  # Output dimension
         )
     
     def forward(
@@ -271,11 +314,11 @@ class WorldModel(base_component.Component):
         action_dim: int,
         task_encoding_dim: int,
         latent_dim: int = 512,
-        encoder_layers: int = 2,
-        encoder_hidden_dim: int = 256,
-        dynamics_hidden_dim: int = 512,
-        reward_hidden_dim: int = 512,
+        num_enc_layers: int = 2,
+        enc_dim: int = 256,
+        mlp_dim: int = 512,
         reward_bins: int = 101,
+        simnorm_dim: int = 8,
     ):
         """Initialize the complete world model.
         
@@ -284,11 +327,11 @@ class WorldModel(base_component.Component):
             action_dim: Dimension of action space
             task_encoding_dim: Dimension of task encoding (CLS token)
             latent_dim: Dimension of latent representation
-            encoder_layers: Number of encoder layers
-            encoder_hidden_dim: Encoder hidden dimension
-            dynamics_hidden_dim: Dynamics hidden dimension  
-            reward_hidden_dim: Reward model hidden dimension
+            num_enc_layers: Number of encoder layers
+            enc_dim: Encoder hidden dimension
+            mlp_dim: Dynamics and reward MLP hidden dimension
             reward_bins: Number of reward discretization bins
+            simnorm_dim: Dimension for simplicial normalization groups
         """
         super().__init__()
         
@@ -302,22 +345,24 @@ class WorldModel(base_component.Component):
             state_dim=state_dim,
             task_encoding_dim=task_encoding_dim,
             latent_dim=latent_dim,
-            num_layers=encoder_layers,
-            hidden_dim=encoder_hidden_dim,
+            num_enc_layers=num_enc_layers,
+            enc_dim=enc_dim,
+            simnorm_dim=simnorm_dim,
         )
         
         self.dynamics = WorldModelDynamics(
             latent_dim=latent_dim,
             action_dim=action_dim,
             task_encoding_dim=task_encoding_dim,
-            hidden_dim=dynamics_hidden_dim,
+            mlp_dim=mlp_dim,
+            simnorm_dim=simnorm_dim,
         )
         
         self.reward = WorldModelReward(
             latent_dim=latent_dim,
             action_dim=action_dim,
             task_encoding_dim=task_encoding_dim,
-            hidden_dim=reward_hidden_dim,
+            mlp_dim=mlp_dim,
             reward_bins=reward_bins,
         )
     
