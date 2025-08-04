@@ -96,7 +96,14 @@ class SawyerDrawerCloseEnvV2(SawyerXYZEnv):
     def _set_obj_xyz(self, pos: npt.NDArray[Any]) -> None:
         qpos = self.data.qpos.flat.copy()
         qvel = self.data.qvel.flat.copy()
-        qpos[9] = pos
+        if len(qpos) == 10:
+            qpos[9] = pos
+        elif len(qpos) == 9:
+            qpos[8] = pos
+        else:
+            raise ValueError(
+                f"Unexpected qpos length: {len(qpos)}. Expected 9 or 10."
+            )
         self.set_state(qpos, qvel)
 
     def reset_model(self) -> npt.NDArray[np.float64]:

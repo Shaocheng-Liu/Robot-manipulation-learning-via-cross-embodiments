@@ -23,6 +23,8 @@ from mtrl.utils.types import ConfigType, EnvMetaDataType, EnvsDictType
 import importlib
 import copy
 
+from pathlib import Path
+
 
 class Experiment(checkpointable.Checkpointable):
     def __init__(self, config: ConfigType, experiment_id: str = "0"):
@@ -34,6 +36,8 @@ class Experiment(checkpointable.Checkpointable):
         """
         self.id = experiment_id
         self.config = config
+        self.robot_type = self.detect_robot_type()
+
         self.device = torch.device(self.config.setup.device)
 
         self.get_env_metadata = get_env_metadata
@@ -114,17 +118,44 @@ class Experiment(checkpointable.Checkpointable):
             ) for _ in range(self.num_envs)]
 
             self.model_dir = [utils.make_dir(
-                os.path.join(self.config.setup.save_dir, f"model_dir/model_{i}_seed_{self.config.setup.seed}")
-            ) for i in self.task_names]
+                create_robot_aware_path(
+                    self.config.setup.save_dir, 
+                    self.robot_type, 
+                    task_name, 
+                    self.config.setup.seed, 
+                    'model'
+                )
+            ) for task_name in self.task_names]
+            
             self.buffer_dir = [utils.make_dir(
-                os.path.join(self.config.setup.save_dir, f"buffer/buffer/buffer_{i}_seed_{self.config.setup.seed}")
-            ) for i in self.task_names]
+                create_robot_aware_path(
+                    self.config.setup.save_dir, 
+                    self.robot_type, 
+                    task_name, 
+                    self.config.setup.seed, 
+                    'buffer'
+                )
+            ) for task_name in self.task_names]
+            
             self.buffer_dir_distill_tmp = [utils.make_dir(
-                os.path.join(self.config.setup.save_dir, f"buffer/buffer_distill_tmp/buffer_distill_tmp_{i}_seed_{self.config.setup.seed}")
-            ) for i in self.task_names]
+                create_robot_aware_path(
+                    self.config.setup.save_dir, 
+                    self.robot_type, 
+                    task_name, 
+                    self.config.setup.seed, 
+                    'buffer_distill_tmp'
+                )
+            ) for task_name in self.task_names]
+            
             self.buffer_dir_distill = [utils.make_dir(
-                os.path.join(self.config.setup.save_dir, f"buffer/buffer_distill/buffer_distill_{i}_seed_{self.config.setup.seed}")
-            ) for i in self.task_names]
+                create_robot_aware_path(
+                    self.config.setup.save_dir, 
+                    self.robot_type, 
+                    task_name, 
+                    self.config.setup.seed, 
+                    'buffer_distill'
+                )
+            ) for task_name in self.task_names]
 
             self.replay_buffer = [hydra.utils.instantiate(
                 self.config.replay_buffer.replay_buffer,
@@ -163,9 +194,14 @@ class Experiment(checkpointable.Checkpointable):
 
         elif self.config.experiment.mode == 'record':
             self.buffer_dir_distill = [utils.make_dir(
-                os.path.join(self.config.setup.save_dir, f"buffer/buffer_distill/recording_buffer_distill_{i}_seed_{self.config.setup.seed}")
-            ) for i in self.task_names]
-
+                create_robot_aware_path(
+                    self.config.setup.save_dir, 
+                    self.robot_type, 
+                    task_name, 
+                    self.config.setup.seed, 
+                    'recording_buffer_distill'
+                )
+            ) for task_name in self.task_names]
             self.replay_buffer_distill = [hydra.utils.instantiate(
                 self.config.replay_buffer.col_replay_buffer,
                 device=self.device,
@@ -315,11 +351,23 @@ class Experiment(checkpointable.Checkpointable):
             )
 
             self.expert_model_dir = [utils.make_dir(
-                os.path.join(self.config.setup.save_dir, f"model_dir/model_{i}_seed_{self.config.setup.seed}")  
-            ) for i in self.task_names]
+                create_robot_aware_path(
+                    self.config.setup.save_dir, 
+                    self.robot_type, 
+                    task_name, 
+                    self.config.setup.seed, 
+                    'model'
+                )
+            ) for task_name in self.task_names]
             
             self.buffer_dir = utils.make_dir(
-                os.path.join(self.config.setup.save_dir, f"buffer/online_buffer_{self.task_names[0]}")
+                create_robot_aware_path(
+                    self.config.setup.save_dir, 
+                    self.robot_type, 
+                    self.task_names[0], 
+                    self.config.setup.seed, 
+                    'online_buffer'
+                )
             )
 
             # Expert
@@ -380,10 +428,23 @@ class Experiment(checkpointable.Checkpointable):
             self.col_start_step = self.col_agent.load_latest_step(model_dir=self.col_model_dir)
 
             self.student_model_dir = utils.make_dir(
-                os.path.join(self.config.setup.save_dir, f'model_dir/student_model_{self.task_names[0]}_seed_{self.config.setup.seed}')  
+                create_robot_aware_path(
+                    self.config.setup.save_dir, 
+                    self.robot_type, 
+                    self.task_names[0], 
+                    self.config.setup.seed, 
+                    'student_model'
+                )
             )
+            
             self.buffer_dir = utils.make_dir(
-                os.path.join(self.config.setup.save_dir, f"buffer/student_buffer_{self.task_names[0]}_seed_{self.config.setup.seed}")
+                create_robot_aware_path(
+                    self.config.setup.save_dir, 
+                    self.robot_type, 
+                    self.task_names[0], 
+                    self.config.setup.seed, 
+                    'student_buffer'
+                )
             )
 
             self.replay_buffer = hydra.utils.instantiate(
@@ -482,7 +543,13 @@ class Experiment(checkpointable.Checkpointable):
 
             # Replay buffer used for distillation
             self.buffer_dir = utils.make_dir(
-                os.path.join(self.config.setup.save_dir, f"buffer/policy_distill_{self.task_names[0]}_seed_{self.config.setup.seed}")
+                create_robot_aware_path(
+                    self.config.setup.save_dir, 
+                    self.robot_type, 
+                    self.task_names[0], 
+                    self.config.setup.seed, 
+                    'policy_distill'
+                )
             )
             self.col_agent = hydra.utils.instantiate(
                 self.config.transformer_collective_network.builder,
@@ -616,6 +683,33 @@ class Experiment(checkpointable.Checkpointable):
         new_tasks = {env_name: random.choice(self.env_name_task_dict[env_name])}
         self.list_envs[index].env.set_task_with_dict(new_tasks)
 
+    def detect_robot_type(self) -> str:
+        """
+        Detect robot type from environment configuration or asset files.
+        
+        Returns:
+            Robot type string ('sawyer', 'ur5e', 'ur10e', etc.)
+        """
+        # Method 1: Check environment assets
+        if hasattr(self.config, 'experiment'):
+            # Look for robot-specific indicators in experiment config
+            robot_type = getattr(self.config.experiment, 'robot_type', '')
+
+            # Check if specific robot is mentioned in config
+            robot_indicators = {
+                'ur5e': ['ur5e', 'ur_5e'],
+                'ur10e': ['ur10e', 'ur_10e'], 
+                'sawyer': ['sawyer', 'default']  # sawyer as default
+            }
+            
+            for robot, indicators in robot_indicators.items():
+                if any(indicator in robot_type.lower() for indicator in indicators):
+                    return robot
+
+        # Default to unknown if cannot detect
+        return 'unknown'
+
+
 def prepare_config(config: ConfigType, env_metadata: EnvMetaDataType) -> ConfigType:
     """Infer some config attributes during runtime.
 
@@ -669,3 +763,52 @@ def get_env_metadata(
     else:
         metadata["max_episode_steps"] = max_episode_steps
     return metadata
+ 
+def create_robot_aware_path(base_path: str, robot_type: str, task_name: str, seed: int, path_type: str) -> str:
+    """
+    Create robot-aware paths for all different path types.
+    
+    Args:
+        base_path: Base directory path
+        robot_type: Detected robot type ('sawyer', 'ur5e', 'ur10e')
+        task_name: Task name
+        seed: Random seed
+        path_type: Type of path ('model', 'buffer', 'buffer_distill', 'buffer_distill_tmp', etc.)
+    
+    Returns:
+        Robot-aware path string
+    """
+    if robot_type == 'unknown':
+        # Fallback to original naming if robot detection fails
+        if path_type == 'model':
+            return os.path.join(base_path, f"model_dir/model_{task_name}_seed_{seed}")
+        elif path_type == 'buffer':
+            return os.path.join(base_path, f"buffer/buffer/buffer_{task_name}_seed_{seed}")
+        elif path_type == 'buffer_distill':
+            return os.path.join(base_path, f"buffer/buffer_distill/buffer_distill_{task_name}_seed_{seed}")
+        elif path_type == 'buffer_distill_tmp':
+            return os.path.join(base_path, f"buffer/buffer_distill_tmp/buffer_distill_tmp_{task_name}_seed_{seed}")
+        # Add other path types as needed
+    
+    # Robot-aware naming
+    if path_type == 'model':
+        return os.path.join(base_path, f"model_dir/model_{robot_type}_{task_name}_seed_{seed}")
+    elif path_type == 'buffer':
+        return os.path.join(base_path, f"buffer/buffer/buffer_{robot_type}_{task_name}_seed_{seed}")
+    elif path_type == 'buffer_distill':
+        return os.path.join(base_path, f"buffer/buffer_distill/buffer_distill_{robot_type}_{task_name}_seed_{seed}")
+    elif path_type == 'buffer_distill_tmp':
+        return os.path.join(base_path, f"buffer/buffer_distill_tmp/buffer_distill_tmp_{robot_type}_{task_name}_seed_{seed}")
+    elif path_type == 'recording_buffer_distill':
+        return os.path.join(base_path, f"buffer/buffer_distill/recording_buffer_distill_{robot_type}_{task_name}_seed_{seed}")
+    elif path_type == 'online_buffer':
+        return os.path.join(base_path, f"buffer/online_buffer_{robot_type}_{task_name}")
+    elif path_type == 'student_model':
+        return os.path.join(base_path, f"model_dir/student_model_{robot_type}_{task_name}_seed_{seed}")
+    elif path_type == 'student_buffer':
+        return os.path.join(base_path, f"buffer/student_buffer_{robot_type}_{task_name}_seed_{seed}")
+    elif path_type == 'policy_distill':
+        return os.path.join(base_path, f"buffer/policy_distill_{robot_type}_{task_name}_seed_{seed}")
+    else:
+        raise ValueError(f"Unknown path_type: {path_type}")
+

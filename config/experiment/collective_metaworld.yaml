@@ -1,5 +1,6 @@
 # @package _group_
 name: collective_metaworld
+robot_type: sawyer # "ur5e" / "ur10e"
 mode: train_worker # train_worker/online_distill_collective_transformer/distill_collective_transformer/evaluate_collective_transformer/train_student/train_student_finetuning/record
 builder:
   _target_: mtrl.experiment.${experiment.name}.Experiment
