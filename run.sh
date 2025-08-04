@@ -73,7 +73,7 @@ online_distill(){
         worker.multitask.num_envs=1 \
         experiment.mode=online_distill_collective_transformer \
         env.benchmark.env_name="${task_name}" \
-        env.benchmark.robot_type="${robot_type}"
+        experiment.robot_type="${robot_type}"
 }
 
 train_student(){
@@ -124,7 +124,7 @@ evaluate_task() {
         env=metaworld-mt1 \
         worker.multitask.num_envs=1 \
         experiment.mode=evaluate_collective_transformer \
-        env.benchmark.robot_type="${robot_type}" \
+        experiment.robot_type="${robot_type}" \
         env.benchmark.env_name=${task_name} \
         experiment.evaluate_transformer="agent" | tee -a $result_path
 }
@@ -148,7 +148,7 @@ evaluate_student() {
         env=metaworld-mt1 \
         worker.multitask.num_envs=1 \
         experiment.mode=evaluate_collective_transformer \
-        env.benchmark.robot_type="${robot_type}" \
+        experiment.robot_type="${robot_type}" \
         env.benchmark.env_name=${task_name} \
         experiment.evaluate_transformer="agent" | tee -a $result_path
 }
