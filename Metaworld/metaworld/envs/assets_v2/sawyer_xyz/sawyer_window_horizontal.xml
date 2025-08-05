@@ -107,7 +107,7 @@
   </actuator>
 
   <equality>
-    <weld body1="mocap" body2="hand" solref="0.02 1"/></weld>
+    <weld body1="mocap" body2="hand" solref="0.02 1"/>
   </equality>
 </mujoco>
 
