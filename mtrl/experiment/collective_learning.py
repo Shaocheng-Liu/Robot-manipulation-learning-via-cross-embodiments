@@ -1338,7 +1338,9 @@ class Experiment(collective_experiment.Experiment):
                 episode_step += 1
 
             success = float(success > 0)
-            self.video.save(file_name=f'{eval_agent}_env{self.env_indices[env_idx]}_success_{success}_reward_{int(episode_reward)}_{tag}')
+            # Get task name from environment
+            task_name = video_envs[self.env_indices[env_idx]].env.name
+            self.video.save(file_name=f'{eval_agent}_env{self.env_indices[env_idx]}_{task_name}_success_{success}_reward_{int(episode_reward)}_{tag}')
             #video_envs[self.env_indices[env_idx]].close()
 
     def record_videos_for_transformer(self, agent, tag="result", seq_len=16, num_eps_per_task_to_record=1):
@@ -1410,7 +1412,9 @@ class Experiment(collective_experiment.Experiment):
                 episode_step += 1
 
             success = float(success > 0)
-            self.video.save(file_name=f'transformer_env{self.env_indices[env_idx]}_success_{success}_reward_{int(episode_reward)}_{tag}')
+            # Get task name from environment
+            task_name = video_envs[self.env_indices[env_idx]].env.name
+            self.video.save(file_name=f'transformer_env{self.env_indices[env_idx]}_{task_name}_success_{success}_reward_{int(episode_reward)}_{tag}')
 
 
     def collect_trajectory(self, vec_env: VecEnv, num_steps: int) -> None:
