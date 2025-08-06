@@ -66,6 +66,7 @@ online_distill(){
     fi
 
     echo "Distill online: $task_name"
+    echo "Additional args: $@"
 
     python3 -u main.py \
         setup=metaworld \
@@ -73,7 +74,8 @@ online_distill(){
         worker.multitask.num_envs=1 \
         experiment.mode=online_distill_collective_transformer \
         env.benchmark.env_name="${task_name}" \
-        experiment.robot_type="${robot_type}"
+        experiment.robot_type="${robot_type}" \
+        "$@"
 }
 
 train_student(){
