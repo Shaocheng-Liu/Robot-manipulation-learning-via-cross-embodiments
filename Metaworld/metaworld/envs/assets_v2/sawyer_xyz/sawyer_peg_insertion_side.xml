@@ -203,8 +203,8 @@
   </contact>
 
   <actuator>
-    <position ctrllimited="true" ctrlrange="-1 1" joint="r_close" kp="20000" user="1"/>
-    <position ctrllimited="true" ctrlrange="-1 1" joint="l_close" kp="20000" user="1"/>
+    <position ctrllimited="true" ctrlrange="-1 1" joint="r_close" kp="12000" user="1"/>
+    <position ctrllimited="true" ctrlrange="-1 1" joint="l_close" kp="12000" user="1"/>
   </actuator>
 
   <equality>
