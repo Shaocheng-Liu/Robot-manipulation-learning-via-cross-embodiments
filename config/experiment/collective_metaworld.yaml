@@ -31,10 +31,10 @@ num_actor_train_step: 50001
 num_critic_train_step: 10000 
 
 # --- online_distill_collective_transformer ---
-num_online_train_step: 60001 # 250000
+num_online_train_step: 100001 # 250000
 init_steps_online_tf: 1000
 follow_col_network: False
-stu_expert_steps: 40000
+stu_expert_steps: 70000
 actor_update_freq: 2
 distill_scripted_policy: True
 
