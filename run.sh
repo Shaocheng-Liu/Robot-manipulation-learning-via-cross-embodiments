@@ -59,6 +59,7 @@ train_task(){
 online_distill(){
     local robot_type="$1"
     local task_name="$2"
+    shift 2  # Remove the first two arguments from the list
 
     if [[ -z "$task_name" ]]; then
         echo "Usage: $0 <task-name>"
@@ -67,7 +68,7 @@ online_distill(){
 
     echo "Distill online: $task_name"
     echo "Additional args: $@"
-
+    
     python3 -u main.py \
         setup=metaworld \
         env=metaworld-mt1 \
