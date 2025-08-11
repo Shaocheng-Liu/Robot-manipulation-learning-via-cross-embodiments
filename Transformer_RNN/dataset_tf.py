@@ -6,6 +6,11 @@ import sys, os
 import re
 import gc
 
+import re
+from pathlib import Path
+
+
+
 class TFDataset(Dataset):
     def __init__(self, states, actions, rewards, policy_mu, task_obs, task_arm, max_seq_len, sequence_length):
         """
@@ -129,9 +134,11 @@ def load_and_preprocess_buffer(path, buffer_name, arm_count):
     return states, rewards, actions, policy_mu, task_obs, task_arm
 
 
-
-
-
+def parse_robot_and_task(buffer_name: str):
+    base = Path(buffer_name).stem.replace("buffer_distill_", "")
+    base = re.sub(r'(-\d+)?_seed_\d+$', '', base)
+    robot, task = base.split('_', 1)
+    return robot, task
 
 ######################################################################
 
@@ -191,6 +198,13 @@ if __name__ == "__main__":
 
     arm_count = 0
 
+    robot2id, next_rid = {}, 0
+    for sub in subdicts:
+        for name in os.listdir(path_data + sub):
+            robot, _ = parse_robot_and_task(name)
+            if robot not in robot2id:
+                robot2id[robot] = next_rid; next_rid += 1
+
     # create training dataset
     for sub in subdicts:
         states_arr, rewards_arr, actions_arr, policy_mu_arr, task_obs_arr, task_arm_arr = [], [], [], [], [], []
@@ -200,7 +214,9 @@ if __name__ == "__main__":
         distill_names = [re.sub(pattern, '', name.replace("buffer_distill_", "")) for name in distill_buffer_names]
 
         for buffer in distill_buffer_names:
-            states, rewards, actions, policy_mu, task_obs, task_arm = load_and_preprocess_buffer(path_data + sub, buffer, arm_count)
+            robot, _ = parse_robot_and_task(buffer)
+            arm_id = robot2id[robot]
+            states, rewards, actions, policy_mu, task_obs, task_arm = load_and_preprocess_buffer(path_data + sub, buffer, arm_id)
             states_arr.append(states)
             rewards_arr.append(rewards)
             actions_arr.append(actions)

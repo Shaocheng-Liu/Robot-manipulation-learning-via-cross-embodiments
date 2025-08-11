@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import json
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score, adjusted_rand_score
+import os
 
 metadata_path = "metadata/task_embedding/roberta_small/metaworld-all.json"
 #path = 'Transformer_RNN/embedding_log/emb_own.pth'
@@ -162,6 +163,7 @@ def plot_trajectory_emb():
     #data = datafile['state_emb']
     data = datafile['tra_emb']
     task_obs = datafile['task'].flatten()
+    task_arm = datafile['task_arm'].flatten()
     rewards = datafile['rewards'].flatten()
     timesteps = datafile['timesteps'].flatten()
     timesteps = timesteps / np.max(timesteps)
@@ -179,25 +181,51 @@ def plot_trajectory_emb():
     # Fit and transform your data
     data_tsne = tsne.fit_transform(data)
 
+    task_ids = np.unique(task_obs)
+    arm_ids = np.unique(task_arm)
+    colors = plt.cm.tab10(np.linspace(0, 1, len(task_ids)))
+    markers = ['o', '^', 's', 'D', 'P', 'X', '*', 'v']  
+    assert len(arm_ids) <= len(markers), "please extend the markers list."
+
     # Plot the result
     plt.figure(figsize=(16, 12))
 
-    for i, label in enumerate(np.unique(task_obs)):
-        mask = (task_obs == label)
-        plt.scatter(data_tsne[mask, 0], data_tsne[mask, 1], color=colors[i], label=task_names[label], alpha=0.5)
+    task_handles = {}
+    for ti, t in enumerate(task_ids):
+        color = colors[ti]
+        for ai, a in enumerate(arm_ids):
+            m = markers[ai]
+            mask = (task_obs == t) & (task_arm == a)
+            if not np.any(mask):
+                continue
+            plt.scatter(
+                data_tsne[mask, 0], data_tsne[mask, 1],
+                color=[color], marker=m, alpha=0.6, s=18, linewidths=0
+            )
+        task_handles[t] = plt.Line2D([0], [0], marker='o', color='w',
+                                     label=task_names[t],
+                                     markerfacecolor=colors[ti], markersize=10)
 
     plt.title('t-SNE Cluster Visualization', fontsize=22)
     plt.xlabel('t-SNE Component 1', fontsize=19)
     plt.ylabel('t-SNE Component 2', fontsize=19)
 
-    # Create legend
-    legend_dict = {task_names[np.unique(task_obs)[i]]: colors[i] for i in range(len(np.unique(task_obs)))}
-    handles = [plt.Line2D([0], [0], marker='o', color='w', label=key, markerfacecolor=value, markersize=10) for key, value in legend_dict.items()]
-    plt.legend(handles=handles, title='Task', fontsize=13, title_fontsize=14)
+    leg_tasks = plt.legend(handles=list(task_handles.values()),
+                           title='Task', fontsize=13, title_fontsize=14,
+                           loc='lower right', frameon=True)
+    plt.gca().add_artist(leg_tasks)
 
+    arm_handles = [plt.Line2D([0],[0], marker=markers[i], color='k',
+                              label=f'arm-{int(a)}', linestyle='',
+                              markerfacecolor='none', markersize=10)
+                   for i, a in enumerate(arm_ids)]
+    plt.legend(handles=arm_handles, title='Robot', fontsize=13, title_fontsize=14,
+               loc='lower center', frameon=True)
+
+    os.makedirs('Transformer_RNN/graphics', exist_ok=True)
     plt.savefig('Transformer_RNN/graphics/tSNE_plot_tra.svg', format='svg', bbox_inches='tight')
-
     plt.show()
+
 
     # reward plot
     plt.figure(figsize=(16, 12))
