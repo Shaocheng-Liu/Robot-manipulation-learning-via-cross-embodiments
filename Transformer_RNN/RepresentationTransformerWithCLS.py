@@ -494,15 +494,22 @@ def trajectory_embedding_valdation(encoder, prediction_head_cls, samples_num, da
     unique_env_idx = np.unique(dataset.task_obs)
     with torch.no_grad():
         while counter < samples_num:
+            unique_tasks = np.unique(dataset.task_obs)
+            unique_arms  = np.unique(dataset.task_arm)
             sample_per_task = []
-            for idx in unique_env_idx:
-                mask = dataset.task_obs == idx
-                possible_values = np.arange(len(dataset.task_obs))[mask]
-                samples = np.random.choice(possible_values)
-                samples = np.arange(avaible_length) + samples * dataset.avaible_length
-                sample_per_task.append(samples)
+            for t in unique_tasks:
+                for a in unique_arms:
+                    mask = (dataset.task_obs == t) & (dataset.task_arm == a)
+                    candidates = np.arange(len(dataset.task_obs))[mask]
+                    if candidates.size == 0:
+                        continue  
+                    pick = np.random.choice(candidates, size=1, replace=False)[0]
+                    windows = np.arange(avaible_length) + pick * avaible_length
+                    sample_per_task.append(windows)
+
             sample_per_task = np.concatenate(sample_per_task)
             batch = [dataset[idx] for idx in sample_per_task]
+
 
             # Now you can convert your batch into tensors, or further process it as needed
             states = torch.tensor(np.stack([item[0] for item in batch]))
