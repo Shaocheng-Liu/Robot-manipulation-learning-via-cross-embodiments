@@ -222,14 +222,14 @@ class Experiment(collective_learning.Experiment):
 
             with agent_utils.eval_mode(agent):
                 if sample_actions:
-                    action[self.env_indices] = agent.select_action(
+                    action[self.env_indices] = agent.sample_action(
                         states=states[self.env_indices],
                         actions=actions[self.env_indices],
                         rewards=rewards[self.env_indices],
                         task_ids=torch.tensor(self.task_num[self.env_indices_i])
                     )
                 else:
-                    action[self.env_indices] = agent.sample_action(
+                    action[self.env_indices] = agent.select_action(
                         states=states[self.env_indices],
                         actions=actions[self.env_indices],
                         rewards=rewards[self.env_indices],
