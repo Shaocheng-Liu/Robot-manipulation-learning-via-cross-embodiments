@@ -47,6 +47,8 @@ class SawyerButtonPressEnvV2(SawyerXYZEnv):
         )
         self.goal_space = Box(np.array(goal_low), np.array(goal_high), dtype=np.float64)
 
+        self.name = 'button-press-v2'
+
     @property
     def model_name(self) -> str:
         return full_v2_path_for("sawyer_xyz/sawyer_button_press.xml")
@@ -92,8 +94,12 @@ class SawyerButtonPressEnvV2(SawyerXYZEnv):
     def _set_obj_xyz(self, pos: npt.NDArray[Any]) -> None:
         qpos = self.data.qpos.flat.copy()
         qvel = self.data.qvel.flat.copy()
-        qpos[9] = pos
-        qvel[9] = 0
+        if len(qpos) == 10:
+            qpos[9] = pos
+            qvel[9] = 0
+        elif len(qpos) == 9:
+            qpos[8] = pos
+            qvel[8] = 0
         self.set_state(qpos, qvel)
 
     def reset_model(self) -> npt.NDArray[np.float64]:
