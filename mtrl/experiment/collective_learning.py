@@ -617,7 +617,7 @@ class Experiment(collective_experiment.Experiment):
                 # evaluate agent periodically
                 if step % exp_config.eval_freq == 0:
                     self.evaluate_transformer(
-                        agent=self.col_agent, vec_env=self.envs["eval"], step=step, episode=episode, seq_len=self.seq_len, sample_actions=True, reward_unscaled=exp_config.use_unscaled
+                        agent=self.col_agent, vec_env=self.envs["eval"], step=step, episode=episode, seq_len=self.seq_len, sample_actions=False, reward_unscaled=exp_config.use_unscaled
                     )
 
                 episode += 1
@@ -813,7 +813,7 @@ class Experiment(collective_experiment.Experiment):
                 # evaluate agent periodically
                 if step % exp_config.eval_freq == 0:
                     self.evaluate_transformer(
-                        agent=self.student, vec_env=self.envs["eval"], step=step, episode=episode, seq_len=self.seq_len, sample_actions=True, reward_unscaled=exp_config.use_unscaled
+                        agent=self.student, vec_env=self.envs["eval"], step=step, episode=episode, seq_len=self.seq_len, sample_actions=False, reward_unscaled=exp_config.use_unscaled
                     )
 
                 episode += 1
@@ -974,7 +974,7 @@ class Experiment(collective_experiment.Experiment):
         action = np.asarray([self.action_space.sample() for _ in range(vec_env.num_envs)])
 
         self.evaluate_transformer(
-            agent=self.col_agent, vec_env=self.envs["eval"], step=0, episode=episode, seq_len=self.seq_len, sample_actions=True, reward_unscaled=exp_config.use_unscaled
+            agent=self.col_agent, vec_env=self.envs["eval"], step=0, episode=episode, seq_len=self.seq_len, sample_actions=False, reward_unscaled=exp_config.use_unscaled
         )
         self.logger.dump(0)
 
@@ -1174,7 +1174,7 @@ class Experiment(collective_experiment.Experiment):
                     start_time = time.time()
                     if step % exp_config.col_eval_freq * 3 == 0:
                         self.evaluate_transformer(
-                            agent=self.col_agent, vec_env=self.envs["eval"], step=step, episode=episode, seq_len=self.seq_len, sample_actions=True, reward_unscaled=exp_config.use_unscaled
+                            agent=self.col_agent, vec_env=self.envs["eval"], step=step, episode=episode, seq_len=self.seq_len, sample_actions=False, reward_unscaled=exp_config.use_unscaled
                         )
 
                 # run distillation updates
