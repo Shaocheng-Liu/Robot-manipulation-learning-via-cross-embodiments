@@ -904,7 +904,7 @@ merge_kwargs={
 
 batch_size = 128
 learning_rate = 0.0002
-epochs = 0
+epochs = 4
 sequence_len = 20
 predict_samples_num = 0
 bnpy_epochs = 1
@@ -925,7 +925,7 @@ should_predict_last_state = True
 device = "cuda" if torch.cuda.is_available() else "cpu"
 seed=2
 
-embedding_num = 3_000 #20_000
+embedding_num = 20000
 model_path = 'Transformer_RNN/checkpoints/representation_cls_transformer_checkpoint.pth'
 dataset_path = 'Transformer_RNN/decision_tf_dataset/train/'
 #dataset_path = 'Transformer_RNN/decision_tf_dataset/recorded_envs/'
