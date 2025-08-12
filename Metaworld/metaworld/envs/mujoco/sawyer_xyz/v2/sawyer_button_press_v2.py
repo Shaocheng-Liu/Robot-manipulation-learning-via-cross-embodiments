@@ -47,6 +47,8 @@ class SawyerButtonPressEnvV2(SawyerXYZEnv):
         )
         self.goal_space = Box(np.array(goal_low), np.array(goal_high), dtype=np.float64)
 
+        self.name = 'button-press-v2'
+
     @property
     def model_name(self) -> str:
         return full_v2_path_for("sawyer_xyz/sawyer_button_press.xml")
