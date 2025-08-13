@@ -36,7 +36,7 @@ init_steps_online_tf: 8000
 follow_col_network: False
 stu_expert_steps: 40000
 actor_update_freq: 2
-distill_scripted_policy: True
+distill_scripted_policy: False
 
 #------------ train_student_finetuning -------------
 init_steps_stu: 4000
