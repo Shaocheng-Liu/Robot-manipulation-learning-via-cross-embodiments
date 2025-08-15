@@ -22,13 +22,13 @@ online_distill(){
 }
 
 online_distill sawyer reach-v2
-online_distill sawyer push-v2
-online_distill sawyer pick-place-v2
+online_distill sawyer push-v2 experiment.num_online_train_step=120001 experiment.stu_expert_steps=80000
+online_distill sawyer pick-place-v2 experiment.num_online_train_step=120001 experiment.stu_expert_steps=80000
 online_distill sawyer door-open-v2
 online_distill sawyer drawer-open-v2
 online_distill sawyer button-press-v2
 online_distill sawyer button-press-topdown-v2
-online_distill sawyer peg-insert-side-v2
+online_distill sawyer peg-insert-side-v2 experiment.num_online_train_step=100001 experiment.stu_expert_steps=68000
 online_distill sawyer window-open-v2
 online_distill sawyer window-close-v2
 
