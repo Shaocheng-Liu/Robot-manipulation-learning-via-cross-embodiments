@@ -471,7 +471,7 @@ class TransformerAgent:
         # actor loss backward
         actor_loss.backward()
         self.actor_optimizer.step()
-        self.transformer_encoder_optimizer.step()
+        # self.transformer_encoder_optimizer.step()
 
     def distill_critic(
         self,
