@@ -107,6 +107,9 @@ def transformer(path):
 
 print(f"--- Evaluation own loss with {n_clusters} clusters ---")
 transformer(path_own_loss)
+n_clusters=18
+print(f"--- Evaluation own loss with {n_clusters} clusters ---")
+transformer(path_own_loss)
 # print(f"--- Evaluation stdandard loss with {n_clusters} clusters ---")
 # transformer(path_std_loss)
 # print(f"--- Evaluation Rnn with {n_clusters} clusters ---")

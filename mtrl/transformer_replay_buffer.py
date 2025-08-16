@@ -106,11 +106,16 @@ class TransformerReplayBuffer(object):
 
     def add_array(self, env_obs, action, reward, next_env_obs, done, task_obs, q_value, mu, log_std, size):
         raise NotImplementedError
-    def sample(self, index=None) -> TransformerReplayBufferSample: 
-        if index is None:
-            idxs = np.random.randint(
+    
+    def sample_indices(self):
+        idxs = np.random.randint(
                 0, self.capacity if self.full else self.idx, size=self.batch_size
             )
+        return idxs
+
+    def sample(self, index=None) -> TransformerReplayBufferSample: 
+        if index is None:
+            idxs = self.sample_indices()
         else:
             idxs = index
 
@@ -146,6 +151,66 @@ class TransformerReplayBuffer(object):
         q_targets = torch.as_tensor(self.q_target[idxs//400, idxs%400], device=self.device).float()
 
         return env_obs, actions, rewards, next_env_obs, mus, log_stds, q_targets, env_indices, task_encoding
+    
+    def build_sequences_for_indices(self, idxs, seq_len, device=None):
+        device = self.device if device is None else device
+        ep_len = 400              # e.g., 400
+        B = len(idxs)
+        S = self.env_obses.shape[-1]
+        A = self.actions.shape[-1]
+        
+        def left_pad(x, target_len):
+            cur = x.shape[0]
+            if cur == target_len:
+                return x
+            pad_n = target_len - cur
+            if cur == 0:
+                return torch.zeros(target_len, x.shape[1], device=x.device, dtype=x.dtype)
+            pad = x[:1].expand(pad_n, -1)
+            return torch.cat([pad, x], dim=0)
+
+        state_seqs   = []
+        action_seqs  = []
+        reward_seqs  = []
+        curr_states  = []
+        env_indices  = []
+
+        for idx in idxs:
+            ep = idx // ep_len
+            t  = idx %  ep_len
+
+            # current step
+            curr_state = torch.as_tensor(self.env_obses[ep, t], device=device).float()
+
+            # window start
+            T = seq_len
+            start_s = max(0, t - (T - 1))    # states: [start_s .. t] 
+            start_ar = start_s                # actions/rewards: [start_ar .. t-1] 
+            end_ar = max(0, t)               
+
+            # get original segments
+            state_win = torch.as_tensor(self.env_obses[ep, start_s:t+1], device=device).float()            # [<=T, S_env]
+            act_win = torch.as_tensor(self.actions[ep, start_ar:end_ar], device=device).float()          # [<=T-1, A]
+            rew_win = torch.as_tensor(self.rewards[ep, start_ar:end_ar], device=device).float()          # [<=T-1, 1]
+
+            state_win = left_pad(state_win, T)           # -> [T, S]
+            act_win   = left_pad(act_win, T-1)           # -> [T-1, A]
+            rew_win   = left_pad(rew_win, T-1)           # -> [T-1, 1]
+
+            state_seqs.append(state_win)
+            action_seqs.append(act_win)
+            reward_seqs.append(rew_win)
+            curr_states.append(curr_state)
+            env_indices.append(self.task_obs[ep, t])
+
+        state_seqs  = torch.stack(state_seqs,  dim=0)  # [B, T,   S]
+        action_seqs = torch.stack(action_seqs, dim=0)  # [B, T-1, A]
+        reward_seqs = torch.stack(reward_seqs, dim=0)  # [B, T-1, 1]
+        curr_states = torch.stack(curr_states, dim=0)  # [B, S]
+        env_indices = torch.as_tensor(env_indices, device=device).long().unsqueeze(-1)  # [B,1]
+
+        return state_seqs, action_seqs, reward_seqs, curr_states, env_indices
+
     
     def sample_trajectories(self, seq_len, index=None): 
         raise NotImplementedError  
@@ -446,3 +511,4 @@ class TransformerReplayBuffer(object):
     def reset(self):
         self.idx = 0
         self.idx_sample = 0
+

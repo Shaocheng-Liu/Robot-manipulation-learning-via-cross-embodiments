@@ -201,6 +201,27 @@ class Experiment(collective_learning.Experiment):
             step (int): step for tracking the training of the agent.
             episode (int): episode for tracking the training of the agent.
         """
+
+        def left_pad_batch(x: torch.Tensor, T: int) -> torch.Tensor:
+            """
+            x: [B, L, D] -> [B, T, D]
+            L >= T: 取最后 T 帧；L < T: 用各自样本的首帧在左侧复制填充；
+            L == 0: 直接全 0。
+            """
+            if x.ndim < 3:
+                raise ValueError(f"left_pad_batch expects [B,L,D], got {tuple(x.shape)}")
+            B, L, D = x.shape[0], x.shape[1], x.shape[2]
+            if L == T:
+                return x
+            if L > T:
+                return x[:, -T:, :]
+            # L < T
+            pad_n = T - L
+            if L == 0:
+                return torch.zeros(B, T, D, device=x.device, dtype=x.dtype)
+            pad = x[:, :1, :].repeat(1, pad_n, 1)   # 每个样本复制自己的首帧
+            return torch.cat([pad, x], dim=1)
+        
         episode_step = 0
         # TODO: check this; maybe remove
         self.logger.log(f"col_eval/episode", episode, step)
@@ -217,22 +238,27 @@ class Experiment(collective_learning.Experiment):
         #if cls_token:
         #    trajectory[:,0] = torch.zeros(44) # CLS-token
 
+        T = 20
+
         while episode_step < self.max_episode_steps:
             action = np.full(shape=(vec_env.num_envs, np.prod(self.action_space.shape)), fill_value=0.)
+            states_pad  = left_pad_batch(states,  T)     # [B,T,S]
+            actions_pad = left_pad_batch(actions, T-1)   # [B,T-1,A]
+            rewards_pad = left_pad_batch(rewards, T-1)   # [B,T-1,1]
 
             with agent_utils.eval_mode(agent):
                 if sample_actions:
                     action[self.env_indices] = agent.sample_action(
-                        states=states[self.env_indices],
-                        actions=actions[self.env_indices],
-                        rewards=rewards[self.env_indices],
+                        states=states_pad[self.env_indices],
+                        actions=actions_pad[self.env_indices],
+                        rewards=rewards_pad[self.env_indices],
                         task_ids=torch.tensor(self.task_num[self.env_indices_i])
                     )
                 else:
                     action[self.env_indices] = agent.select_action(
-                        states=states[self.env_indices],
-                        actions=actions[self.env_indices],
-                        rewards=rewards[self.env_indices],
+                        states=states_pad[self.env_indices],
+                        actions=actions_pad[self.env_indices],
+                        rewards=rewards_pad[self.env_indices],
                         task_ids=torch.tensor(self.task_num[self.env_indices_i])
                     )
 

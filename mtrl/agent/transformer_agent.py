@@ -12,6 +12,7 @@ from mtrl.agent import utils as agent_utils
 from mtrl.agent.ds.mt_obs import MTObs
 from mtrl.utils.types import ConfigType, ModelType, TensorType, ModelType, OptimizerType, ComponentType, ParameterType
 from mtrl.utils.utils import is_integer, make_dir
+from mtrl.agent.components.world_model import WorldModel
 ComponentOrOptimizerType = Union[ComponentType, OptimizerType]
 
 from pathlib import Path
@@ -49,6 +50,10 @@ class TransformerAgent:
         use_zeros,
         dropout,
         loss_reduction: str = "mean",
+        # world model parameters
+        use_world_model: bool=False,
+        world_model_cfg: Optional[ConfigType] = None,
+        world_model_optimizer_cfg: Optional[ConfigType] = None
     ):
         self.env_obs_shape = env_obs_shape
         self.action_shape = action_shape
@@ -71,10 +76,34 @@ class TransformerAgent:
         self._opimizer_suffix = "_optimizer"
         self._components: Dict[str, ModelType] = {}
         self._optimizers: Dict[str, OptimizerType] = {}
+        self.seq_len = 20
+
+        self.use_world_model = use_world_model
 
         # components
+        if self.use_world_model and world_model_cfg is not None:
+            # Initialize world model
+            self.world_model = WorldModel(
+                state_dim=env_obs_shape[0],
+                action_dim=action_shape[0],
+                task_encoding_dim=self.cls_dim,
+                **world_model_cfg
+            ).to(self.device)
+
+            # When using world model, actor uses latent states
+            actor_input_dim = world_model_cfg.get('latent_dim', 512)
+            if self.additional_input_state:
+                actor_input_dim += self.cls_dim  # Add task encoding dimension
+        else:
+            self.world_model = None
+            actor_input_dim = env_obs_shape[0]
+            if self.additional_input_state:
+                actor_input_dim += self.cls_dim
+
         self.actor = hydra.utils.instantiate(
-            actor_cfg, env_obs_shape=env_obs_shape, action_shape=action_shape,
+            actor_cfg, 
+            env_obs_shape=[actor_input_dim] if self.use_world_model else env_obs_shape,
+            action_shape=action_shape,
             use_tra_preprocessing=use_tra_preprocessing,
             use_cls_prediction_head=use_cls_prediction_head,
             tra_preprocessing_dim=tra_preprocessing_dim,
@@ -363,6 +392,7 @@ class TransformerAgent:
             kwargs_to_compute_gradient (Dict[str, Any]):
 
         """
+        
         if isinstance(replay_buffer_list, list):
             state_list, action_list, rewards_list, mu_list, log_std_list, task_encoding_list = [], [], [], [], [], []
             for buffer in replay_buffer_list:
@@ -381,14 +411,21 @@ class TransformerAgent:
             batch_log_std = torch.cat(log_std_list)
             task_encoding = torch.cat(task_encoding_list)
         else:
+            idxs = replay_buffer_list.sample_indices()
             #states, actions, rewards, _, batch_mu, batch_log_std, _, task_ids = replay_buffer_list.sample_trajectories(seq_len)
-            states, actions, rewards, _, batch_mu, batch_log_std, _, task_ids, task_encoding = replay_buffer_list.sample_new()
+            states, actions, rewards, _, batch_mu, batch_log_std, _, task_ids, task_encoding = replay_buffer_list.sample_new(idxs)
+            states_seq, actions_seq, rewards_seq, current_state, _ = replay_buffer_list.build_sequences_for_indices(idxs, self.seq_len, device=self.device)
 
         if self.use_zeros:
             task_encoding = torch.zeros((states.shape[0],self.cls_dim)).to(self.device)
         elif self.use_task_id:
             task_encoding = task_ids.repeat(1, self.cls_dim)
-        
+        elif self.use_cls_prediction_head:
+            task_encoding = self.get_cls_encoding(
+                states=states_seq, actions=actions_seq, rewards=rewards_seq,
+                disable_grad=True, mask=None
+            )
+
         if self.additional_input_state:
             current_state = states
             actor_input = torch.cat((task_encoding, current_state), dim=1)
@@ -466,7 +503,15 @@ class TransformerAgent:
             q_targets = torch.cat(q_target_list)
             task_encoding = torch.cat(task_encoding_list)
         else:
-            states, actions, rewards, _, _, _, q_targets, _, task_encoding = replay_buffer_list.sample_new()
+            idxs = replay_buffer_list.sample_indices()
+            states, actions, rewards, _, _, _, q_targets, _, task_encoding = replay_buffer_list.sample_new(idxs)
+            states_seq, actions_seq, rewards_seq, current_state, _ = replay_buffer_list.build_sequences_for_indices(idxs, self.seq_len, device=self.device)
+
+        if self.use_cls_prediction_head:
+            task_encoding = self.get_cls_encoding(
+                states=states_seq, actions=actions_seq, rewards=rewards_seq,
+                disable_grad=True, mask=None
+            )
 
         if self.additional_input_state:
             critic_input = torch.cat((task_encoding, states, actions), dim=1)
