@@ -257,7 +257,7 @@ online_distill push-v2
 online_distill pick-place-v2
 online_distill door-open-v2
 online_distill drawer-open-v2
-online_distill drawer-close-v2
+online_distill button-press-v2
 online_distill button-press-topdown-v2
 online_distill peg-insert-side-v2
 online_distill window-open-v2
@@ -276,16 +276,27 @@ split_buffer window-open-v2
 split_buffer window-close-v2
 
 # split and mv dataset for col network training
-split_online_buffer reach-v2
-split_online_buffer push-v2
-split_online_buffer pick-place-v2
-split_online_buffer door-open-v2
-split_online_buffer drawer-open-v2
-split_online_buffer drawer-close-v2
-split_online_buffer button-press-topdown-v2
-split_online_buffer peg-insert-side-v2
-split_online_buffer window-open-v2
-split_online_buffer window-close-v2
+split_online_buffer sawyer reach-v2
+split_online_buffer sawyer push-v2
+split_online_buffer sawyer pick-place-v2
+split_online_buffer sawyer door-open-v2
+split_online_buffer sawyer drawer-open-v2
+split_online_buffer sawyer button-press-v2
+split_online_buffer sawyer button-press-topdown-v2
+split_online_buffer sawyer peg-insert-side-v2
+split_online_buffer sawyer window-open-v2
+split_online_buffer sawyer window-close-v2
+
+split_online_buffer ur10e reach-v2
+split_online_buffer ur10e push-v2
+split_online_buffer ur10e pick-place-v2
+split_online_buffer ur10e door-open-v2
+split_online_buffer ur10e drawer-open-v2
+split_online_buffer ur10e button-press-v2
+split_online_buffer ur10e button-press-topdown-v2
+split_online_buffer ur10e peg-insert-side-v2
+split_online_buffer ur10e window-open-v2
+split_online_buffer ur10e window-close-v2
 
 # evaluate single agents
 evaluate_task reach-v2 # -> 96/100, 10/100 on ur10e

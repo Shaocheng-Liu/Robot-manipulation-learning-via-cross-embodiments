@@ -170,6 +170,13 @@ def plot_trajectory_emb():
     rewards = rewards / np.max(rewards)
     colors = plt.cm.tab10(np.linspace(0, 1, len(np.unique(task_obs))))
 
+    print('全局 arm 分布: ', np.unique(task_arm, return_counts=True))
+
+    print('—— 每个 task 下的 arm 计数 ——')
+    for t in sorted(np.unique(task_obs)):
+        ids, cnts = np.unique(task_arm[task_obs==t], return_counts=True)
+        print(f'task {int(t)}:', dict(zip(ids.astype(int), cnts)))
+
     # Create mapping ids to names
     with open(metadata_path) as f:
         metadata = json.load(f)
