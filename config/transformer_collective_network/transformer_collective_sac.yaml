@@ -24,11 +24,11 @@ builder:
   actor_update_freq: 2
   use_tra_preprocessing: False
   use_state_embedding: False  
-  use_cls_prediction_head: True
+  use_cls_prediction_head: False
   cluster_latent_space: False
   additional_input_state: True 
   use_task_id: False 
-  use_zeros: False 
+  use_zeros: True
   tra_preprocessing_dim: 8
   init_temperature: 0.1
   dropout: 0.
