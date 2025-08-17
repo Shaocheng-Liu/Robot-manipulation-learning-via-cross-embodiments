@@ -417,10 +417,12 @@ class TransformerAgent:
             states_seq, actions_seq, rewards_seq, current_state, _ = replay_buffer_list.build_sequences_for_indices(idxs, self.seq_len, device=self.device)
 
         if self.use_zeros:
+            print("Using zeros for task encoding")
             task_encoding = torch.zeros((states.shape[0],self.cls_dim)).to(self.device)
         elif self.use_task_id:
             task_encoding = task_ids.repeat(1, self.cls_dim)
         elif self.use_cls_prediction_head:
+            print("Using cls prediction head for task encoding")
             task_encoding = self.get_cls_encoding(
                 states=states_seq, actions=actions_seq, rewards=rewards_seq,
                 disable_grad=True, mask=None
