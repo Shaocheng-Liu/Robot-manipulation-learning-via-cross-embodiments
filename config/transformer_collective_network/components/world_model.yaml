@@ -1,0 +1,18 @@
+# Latent space dimension
+latent_dim: 512
+
+# Encoder configuration
+num_enc_layers: 3  # Number of encoder layers (2-5 as per TD-MPC2)
+enc_dim: 256       # Hidden dimension for encoder layers
+
+# Dynamics and reward model configuration  
+mlp_dim: 512       # Hidden dimension for dynamics and reward MLPs
+
+# Reward model configuration
+reward_bins: 101  # Discretized reward prediction bins
+
+# Simplicial normalization dimension
+simnorm_dim: 8
+
+# World model training parameters
+reward_bounds: [-10.0, 10.0]  # Min/max reward for discretization
