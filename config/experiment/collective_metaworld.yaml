@@ -77,7 +77,7 @@ save: #
 save_dir: ${setup.save_dir} 
 save_freq: 20000 # multiple of buffer capacity
 save_freq_transformer: 10000
-save_video: True
+save_video: False
 save_video_freq: 500000 #muliple of eval_freq
 
 envs_to_exclude_during_training: []
