@@ -1,3 +1,5 @@
+# @package transformer_collective_network.world_model
+
 # Latent space dimension
 latent_dim: 512
 
