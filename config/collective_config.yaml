@@ -20,11 +20,13 @@ defaults:
   - transformer_collective_network/components: ${defaults.0.setup}_actor
   - transformer_collective_network/components: ${defaults.0.setup}_critic
   - transformer_collective_network/components: ${defaults.0.setup}_transformer_encoder
+  - transformer_collective_network/components: ${defaults.0.setup}_world_model
   - transformer_collective_network/optimizers: ${defaults.0.setup}_actor
   - transformer_collective_network/optimizers: ${defaults.0.setup}_critic
   - transformer_collective_network/optimizers: ${defaults.0.setup}_alpha
   - transformer_collective_network/optimizers: ${defaults.0.setup}_transformer_encoder
-  
+  - transformer_collective_network/optimizers: ${defaults.0.setup}_world_model
+
   - student: student_sac
   - student/components: ${defaults.0.setup}_actor
   - student/components: ${defaults.0.setup}_critic
