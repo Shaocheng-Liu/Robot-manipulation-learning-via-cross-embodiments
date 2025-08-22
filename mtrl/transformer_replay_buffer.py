@@ -154,7 +154,7 @@ class TransformerReplayBuffer(object):
     
     def build_sequences_for_indices(self, idxs, seq_len, device=None):
         device = self.device if device is None else device
-        ep_len = 400              # e.g., 400
+        ep_len = 400             
         B = len(idxs)
         S = self.env_obses.shape[-1]
         A = self.actions.shape[-1]

@@ -7,6 +7,8 @@ import numpy as np
 from mtrl.agent.components import base as base_component
 from mtrl.utils.types import TensorType
 
+from .wm_math import DRegCfg, soft_ce, two_hot_inv, symlog, symexp
+
 
 class SimNorm(nn.Module):
     """
@@ -300,6 +302,20 @@ class WorldModelReward(base_component.Component):
         reward_pred = torch.sum(reward_probs * reward_bins, dim=-1, keepdim=True)
         
         return reward_pred
+    
+class QEnsemble(nn.Module):
+    """K 个头的 Q 网络，输出离散回归 logits。"""
+    def __init__(self, in_dim: int, mlp_dim: int, num_q: int = 5, num_bins: int = 101, dropout: float = 0.0):
+        super().__init__()
+        self.heads = nn.ModuleList([
+            mlp(in_dim, [mlp_dim, mlp_dim], max(num_bins, 1), dropout=dropout)
+            for _ in range(num_q)
+        ])
+        self.num_q = num_q
+        self.num_bins = num_bins
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # 堆叠为 [num_q, B, num_bins]
+        return torch.stack([h(x) for h in self.heads], dim=0)
 
 
 class WorldModel(base_component.Component):

@@ -49,6 +49,7 @@ class TransformerAgent:
         use_task_id,
         use_zeros,
         dropout,
+        cls_alpha,
         loss_reduction: str = "mean",
         # world model parameters
         use_world_model: bool=False,
@@ -437,13 +438,13 @@ class TransformerAgent:
             idxs = replay_buffer_list.sample_indices()
             #states, actions, rewards, _, batch_mu, batch_log_std, _, task_ids = replay_buffer_list.sample_trajectories(seq_len)
             states, actions, rewards, _, batch_mu, batch_log_std, _, task_ids, task_encoding = replay_buffer_list.sample_new(idxs)
-            states_seq, actions_seq, rewards_seq, current_state, _ = replay_buffer_list.build_sequences_for_indices(idxs, self.seq_len, device=self.device)
 
         if self.use_zeros:
             task_encoding = torch.zeros((states.shape[0],self.cls_dim)).to(self.device)
         elif self.use_task_id:
             task_encoding = task_ids.repeat(1, self.cls_dim)
         elif self.use_cls_prediction_head:
+            states_seq, actions_seq, rewards_seq, current_state, _ = replay_buffer_list.build_sequences_for_indices(idxs, self.seq_len, device=self.device)
             task_encoding = self.get_cls_encoding(
                 states=states_seq, actions=actions_seq, rewards=rewards_seq,
                 disable_grad=True, mask=None
@@ -536,9 +537,9 @@ class TransformerAgent:
         else:
             idxs = replay_buffer_list.sample_indices()
             states, actions, rewards, _, _, _, q_targets, _, task_encoding = replay_buffer_list.sample_new(idxs)
-            states_seq, actions_seq, rewards_seq, current_state, _ = replay_buffer_list.build_sequences_for_indices(idxs, self.seq_len, device=self.device)
 
         if self.use_cls_prediction_head:
+            states_seq, actions_seq, rewards_seq, current_state, _ = replay_buffer_list.build_sequences_for_indices(idxs, self.seq_len, device=self.device)
             task_encoding = self.get_cls_encoding(
                 states=states_seq, actions=actions_seq, rewards=rewards_seq,
                 disable_grad=True, mask=None
@@ -688,6 +689,13 @@ class TransformerAgent:
             task_encoding = torch.cat(task_encoding_list)
         else:
             states, actions, rewards, _, _, _, q_target, task_ids, task_encoding = replay_buffer_list.sample_new()
+
+        if self.use_cls_prediction_head:
+            states_seq, actions_seq, rewards_seq, current_state, _ = replay_buffer_list.build_sequences_for_indices(idxs, self.seq_len, device=self.device)
+            task_encoding = self.get_cls_encoding(
+                states=states_seq, actions=actions_seq, rewards=rewards_seq,
+                disable_grad=True, mask=None
+            )
 
         with torch.no_grad():
             if self.additional_input_state:

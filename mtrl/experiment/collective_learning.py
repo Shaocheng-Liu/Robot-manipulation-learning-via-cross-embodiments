@@ -666,7 +666,7 @@ class Experiment(collective_experiment.Experiment):
                         task_ids=torch.tensor(self.task_num[self.env_indices_i])
                     )
 
-            # safe the encoding for later evalutation
+            # calculate the task encoding with random initialized TT    
             encoding = self.col_agent.calculate_task_encoding(
                 states=states[self.env_indices],
                 actions=actions[self.env_indices],
