@@ -674,13 +674,20 @@ class TransformerAgent:
         if isinstance(replay_buffer_list, list):
             state_list, actions_list, q_target_list, rewards_list, task_id_list, task_encoding_list = [], [], [], [], [], []
             for buffer in replay_buffer_list:
-                states, actions, rewards, _, _, _, q_target, task_id_sample, encoding_sample = buffer.sample_new()
+                idxs = buffer.sample_indices()
+                states, actions, rewards, _, _, _, q_target, task_id_sample, task_encoding = buffer.sample_new(idxs)
+                if self.use_cls_prediction_head:
+                    states_seq, actions_seq, rewards_seq, current_state, _ = buffer.build_sequences_for_indices(idxs, self.seq_len, device=self.device)
+                    task_encoding = self.get_cls_encoding(
+                        states=states_seq, actions=actions_seq, rewards=rewards_seq,
+                        disable_grad=True, mask=None
+                    )
                 state_list.append(states)
                 actions_list.append(actions)
                 q_target_list.append(q_target)
                 rewards_list.append(rewards)
                 task_id_list.append(task_id_sample)
-                task_encoding_list.append(encoding_sample)
+                task_encoding_list.append(task_encoding)
             states = torch.cat(state_list)
             actions = torch.cat(actions_list)
             q_target = torch.cat(q_target_list)
@@ -688,14 +695,15 @@ class TransformerAgent:
             task_ids = torch.cat(task_id_list)
             task_encoding = torch.cat(task_encoding_list)
         else:
-            states, actions, rewards, _, _, _, q_target, task_ids, task_encoding = replay_buffer_list.sample_new()
+            idxs = replay_buffer_list.sample_indices()
+            states, actions, rewards, _, _, _, q_target, task_ids, task_encoding = replay_buffer_list.sample_new(idxs)
 
-        if self.use_cls_prediction_head:
-            states_seq, actions_seq, rewards_seq, current_state, _ = replay_buffer_list.build_sequences_for_indices(idxs, self.seq_len, device=self.device)
-            task_encoding = self.get_cls_encoding(
-                states=states_seq, actions=actions_seq, rewards=rewards_seq,
-                disable_grad=True, mask=None
-            )
+            if self.use_cls_prediction_head:
+                states_seq, actions_seq, rewards_seq, current_state, _ = replay_buffer_list.build_sequences_for_indices(idxs, self.seq_len, device=self.device)
+                task_encoding = self.get_cls_encoding(
+                    states=states_seq, actions=actions_seq, rewards=rewards_seq,
+                    disable_grad=True, mask=None
+                )
 
         with torch.no_grad():
             if self.additional_input_state:
