@@ -904,7 +904,7 @@ merge_kwargs={
 
 batch_size = 128
 learning_rate = 0.0002
-epochs = 8
+epochs = 0
 sequence_len = 20
 predict_samples_num = 0
 bnpy_epochs = 1
