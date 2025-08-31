@@ -264,16 +264,25 @@ online_distill window-open-v2
 online_distill window-close-v2
 
 # split and mv dataset for trajectory transformer training
-split_buffer reach-v2
-split_buffer push-v2
-split_buffer pick-place-v2
-split_buffer door-open-v2
-split_buffer drawer-open-v2
-split_buffer drawer-close-v2
-split_buffer button-press-topdown-v2
-split_buffer peg-insert-side-v2
-split_buffer window-open-v2
-split_buffer window-close-v2
+split_buffer sawyer reach-v2
+split_buffer sawyer push-v2
+split_buffer sawyer pick-place-v2
+split_buffer sawyer door-open-v2
+split_buffer sawyer drawer-open-v2
+split_buffer sawyer drawer-close-v2
+split_buffer sawyer button-press-topdown-v2
+split_buffer sawyer peg-insert-side-v2
+split_buffer sawyer window-open-v2
+split_buffer sawyer window-close-v2
+
+split_buffer ur10e reach-v2
+split_buffer ur10e push-v2
+split_buffer ur10e pick-place-v2
+split_buffer ur10e door-open-v2
+split_buffer ur10e drawer-open-v2
+split_buffer ur10e button-press-v2
+split_buffer ur10e button-press-topdown-v2
+split_buffer ur10e window-close-v2
 
 # split and mv dataset for col network training
 split_online_buffer sawyer reach-v2
@@ -317,7 +326,7 @@ python3 Transformer_RNN/dataset_tf.py
 mv Transformer_RNN/decision_tf_dataset/_chunk_0 Transformer_RNN/decision_tf_dataset/train/_chunk_0
 mv Transformer_RNN/decision_tf_dataset/_chunk_1 Transformer_RNN/decision_tf_dataset/validation/_chunk_0
 
-python3 Transformer_RNN/RepresentationTransformerWithCLS.py
+CUDA_VISIBLE_DEVICES=2 python3 Transformer_RNN/RepresentationTransformerWithCLS.py
 
 # train col network
 python3 -u main.py setup=metaworld env=metaworld-mt1 worker.multitask.num_envs=1 experiment.mode=distill_collective_transformer 
