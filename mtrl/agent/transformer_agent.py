@@ -266,9 +266,13 @@ class TransformerAgent:
         if disable_grad:
             with torch.no_grad():
                 encoding = self.task_encoder(states, actions, rewards, mask)
-                return self.prediction_head_cls(encoding[-1])
+                cls = self.prediction_head_cls(encoding[-1])
+                cls = F.normalize(cls, p=2, dim=-1, eps=1e-8)
+                return cls
         encoding = self.task_encoder(states, actions, rewards, mask)
-        return self.prediction_head_cls(encoding[-1])
+        cls = self.prediction_head_cls(encoding[-1])
+        cls = F.normalize(cls, p=2, dim=-1, eps=1e-8)
+        return cls
     
     def get_task_encoding(
         self, 
@@ -613,10 +617,19 @@ class TransformerAgent:
             next_states = torch.cat(next_state_list)
             task_encoding = torch.cat(task_encoding_list)
         else:
-            states, actions, rewards, next_states, _, _, _, _, task_encoding = replay_buffer_list.sample_new()
+            idxs = replay_buffer_list.sample_indices()
+            states, actions, rewards, next_states, _, _, _, _, task_encoding = replay_buffer_list.sample_new(idxs)
 
         if self.use_zeros:
             task_encoding = torch.zeros((states.shape[0], self.cls_dim)).to(self.device)
+
+        elif self.use_cls_prediction_head:
+            states_seq, actions_seq, rewards_seq, current_state, _ = replay_buffer_list.build_sequences_for_indices(idxs, self.seq_len, device=self.device)
+            task_encoding = self.get_cls_encoding(
+                states=states_seq, actions=actions_seq, rewards=rewards_seq,
+                disable_grad=True, mask=None
+            )
+
         # Compute world model losses
         dynamics_loss, reward_loss, total_loss = self.world_model.compute_loss(
             state=states,
