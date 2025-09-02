@@ -923,7 +923,7 @@ train_bnpy = True
 should_predict_last_state = True
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-seed=1
+seed=4
 
 embedding_num = 20000
 model_path = 'Transformer_RNN/checkpoints/representation_cls_transformer_checkpoint.pth'
