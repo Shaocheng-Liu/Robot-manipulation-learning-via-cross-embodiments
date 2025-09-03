@@ -267,11 +267,11 @@ class TransformerAgent:
             with torch.no_grad():
                 encoding = self.task_encoder(states, actions, rewards, mask)
                 cls = self.prediction_head_cls(encoding[-1])
-                cls = F.normalize(cls, p=2, dim=-1, eps=1e-8)
+                # cls = F.normalize(cls, p=2, dim=-1, eps=1e-8)
                 return cls
         encoding = self.task_encoder(states, actions, rewards, mask)
         cls = self.prediction_head_cls(encoding[-1])
-        cls = F.normalize(cls, p=2, dim=-1, eps=1e-8)
+        # cls = F.normalize(cls, p=2, dim=-1, eps=1e-8)
         return cls
     
     def get_task_encoding(
