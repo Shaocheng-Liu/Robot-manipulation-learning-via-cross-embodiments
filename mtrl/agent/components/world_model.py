@@ -10,6 +10,17 @@ from mtrl.utils.types import TensorType
 
 from .wm_math import DRegCfg, soft_ce, two_hot_inv, symlog
 
+try:
+    Mish = nn.Mish  # PyTorch 里有就直接用
+except AttributeError:
+    class Mish(nn.Module):
+        def __init__(self, inplace: bool = False):
+            super().__init__()
+            self.inplace = inplace  # 保留接口以兼容调用
+        def forward(self, x):
+            # Mish(x) = x * tanh(softplus(x))
+            return x * torch.tanh(F.softplus(x))
+
 
 # ----------------- small blocks -----------------
 class SimNorm(nn.Module):
@@ -35,7 +46,7 @@ class NormedLinear(nn.Module):
         self.linear = nn.Linear(in_features, out_features)
         self.ln = nn.LayerNorm(out_features)
         if act is None:
-            act = nn.Mish(inplace=False)
+            act = Mish(inplace=False)
         self.act = act
         self.dropout = nn.Dropout(dropout, inplace=False) if dropout and dropout > 1e-8 else None
 
