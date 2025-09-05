@@ -261,82 +261,49 @@ class WorldModel(base_component.Component):
         q_low: float = 0.01,
         q_high: float = 0.99,
         print_stats: bool = True,
-    ) -> Tuple[float, float]:
+    ):
         """
-        从 buffer 里估计 symlog(reward) 的分位数，用于 two-hot 的 (vmin, vmax)。
-        兼容两类访问方式：
-          1) 直接有 numpy 数组属性：buffer.rewards 形如 [E, T, 1] 或 [N, 1]
-          2) 只能采样：用 buffer.sample_indices() / buffer.rewards[...] 收集
+        仅适配 TransformerReplayBuffer：
+        - 直接从 replay_buffer.rewards 读取（形状 [E, T, 1]）
+        - 只使用有效区间（full ? capacity : idx）
+        - 先 symlog，再在 symlog 轴上取分位数作为 (vmin, vmax)
+        返回：vmin, vmax（float，位于 symlog 轴）
         """
-        def to_flat_numpy_rewards(buf, max_n) -> np.ndarray:
-            # 优先走直接数组
-            if hasattr(buf, "rewards") and isinstance(buf.rewards, np.ndarray):
-                r = buf.rewards
-                r = r.reshape(-1)  # [E*T] or [N]
-                if r.size > max_n:
-                    idx = np.random.RandomState(0).choice(r.size, size=max_n, replace=False)
-                    r = r[idx]
-                return r.astype(np.float32)
+        # 有效样本数
+        N_valid = replay_buffer.capacity if getattr(replay_buffer, "full", False) \
+                else getattr(replay_buffer, "idx", 0)
+        if N_valid <= 0:
+            raise RuntimeError("Replay buffer 里还没有有效的 reward 样本。")
 
-            # 次选：通过 indices 抽样（需要 rewards 数组存在）
-            if hasattr(buf, "rewards") and isinstance(buf.rewards, np.ndarray) and hasattr(buf, "sample_indices"):
-                total = buf.rewards.reshape(-1).shape[0]
-                n = min(total, max_n)
-                idxs = buf.sample_indices() if callable(getattr(buf, "sample_indices", None)) else np.random.randint(0, total, size=n)
-                # 兼容你自定义的二维索引布局 [ep, t]
-                try:
-                    r = buf.rewards[idxs // 400, idxs % 400]  # 你的 TransformerReplayBuffer 典型布局
-                except Exception:
-                    r = buf.rewards.reshape(-1)[idxs]
-                return r.reshape(-1).astype(np.float32)
+        # 拉平拿前 N_valid 个（避免把未写入的尾部 0 算进去）
+        r_np = replay_buffer.rewards.reshape(-1)[:N_valid].astype(np.float32)
+        if r_np.size == 0:
+            raise RuntimeError("从 replay_buffer.rewards 取到的 reward 为空。")
 
-            # 兜底：尝试 sample()（效率最低，而且很多实现返回 torch）
-            if hasattr(buf, "sample"):
-                rs = []
-                rng = np.random.RandomState(0)
-                bs = getattr(buf, "batch_size", 1024)
-                need = max_n
-                while need > 0:
-                    batch = buf.sample()
-                    if hasattr(batch, "reward"):
-                        r = batch.reward
-                        if hasattr(r, "cpu"):
-                            r = r.cpu().numpy()
-                        rs.append(r.reshape(-1))
-                        need -= r.size
-                        if len(rs) > 20_000:  # 防止死循环
-                            break
-                    else:
-                        break
-                if rs:
-                    r = np.concatenate(rs, axis=0)
-                    if r.size > max_n:
-                        idx = rng.choice(r.size, size=max_n, replace=False)
-                        r = r[idx]
-                    return r.astype(np.float32)
+        # 如样本太多，下采样（固定随机种子保证可复现）
+        if r_np.size > max_samples:
+            rng = np.random.RandomState(0)
+            idx = rng.choice(r_np.size, size=max_samples, replace=False)
+            r_np = r_np[idx]
 
-            raise RuntimeError("Cannot extract rewards from replay_buffer reliably.")
+        # 到 symlog 轴
+        r_symlog = symlog(torch.from_numpy(r_np)).numpy()
 
-        # 取样
-        rewards_np = to_flat_numpy_rewards(replay_buffer, max_samples)
-        if rewards_np.size == 0:
-            raise RuntimeError("No rewards found in buffer to estimate bounds.")
-
-        # symlog 再取分位数
-        r_tensor = torch.from_numpy(rewards_np)
-        r_symlog = symlog(r_tensor).numpy()
+        # 分位数做边界（更抗离群）
         vmin = float(np.quantile(r_symlog, q_low))
         vmax = float(np.quantile(r_symlog, q_high))
 
-        # 防“边界重合”
-        if math.isclose(vmin, vmax):
-            pad = 1e-3
-            vmin, vmax = vmin - pad, vmax + pad
+        # 防止数值重合
+        if np.isclose(vmin, vmax):
+            eps = 1e-3
+            vmin, vmax = vmin - eps, vmax + eps
 
         if print_stats:
-            print(f"[WorldModel] Reward stats: "
-                  f"raw_min={rewards_np.min():.4f}, raw_max={rewards_np.max():.4f}, "
-                  f"symlog_q{int(q_low*100)}={vmin:.4f}, symlog_q{int(q_high*100)}={vmax:.4f}, "
-                  f"N={rewards_np.size}")
+            print(
+                "[Reward bounds] "
+                f"raw_min={r_np.min():.4f}, raw_max={r_np.max():.4f}, "
+                f"symlog_q{int(q_low*100)}={vmin:.4f}, symlog_q{int(q_high*100)}={vmax:.4f}, "
+                f"N={r_np.size}"
+            )
 
         return vmin, vmax

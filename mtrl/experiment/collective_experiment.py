@@ -578,6 +578,71 @@ class Experiment(checkpointable.Checkpointable):
 
             self.start_step = 0
 
+        elif self.config.experiment.mode == 'train_world_model':
+            # === 仅训练 TransformerAgent 的 world model ===
+
+            # 1) 实例化 TransformerAgent（和 distill_collective_transformer 使用同一个 builder）
+            self.col_agent = hydra.utils.instantiate(
+                self.config.transformer_collective_network.builder,
+                env_obs_shape=env_obs_shape,
+                action_shape=action_shape,
+                action_range=[
+                    float(self.action_space.low.min()),
+                    float(self.action_space.high.max()),
+                ],
+                device=self.device,
+            )
+
+            # 2) 模型保存目录（单独放 world model）
+            self.col_model_dir = utils.make_dir(
+                os.path.join(self.config.setup.save_dir, "model_dir/model_world")
+            )
+
+            # 3) 训练数据：聚合 train split 的 collective buffers（与 distill_collective_transformer 相同套路）
+            self.col_buffer_loc = utils.make_dir(
+                os.path.join(self.config.setup.save_dir, "buffer/collective_buffer/train")
+            )
+            self.distill_buffer_names = os.listdir(self.col_buffer_loc)
+            if len(self.distill_buffer_names) == 0:
+                raise RuntimeError(f"找不到训练数据目录：{self.col_buffer_loc}")
+
+            buffer_dirs = [
+                utils.make_dir(os.path.join(self.config.setup.save_dir, f"buffer/collective_buffer/train/{i}"))
+                for i in self.distill_buffer_names
+            ]
+
+            # 4) 聚合成一个 TransformerReplayBuffer（就是你项目里用于 col 的那个）
+            self.replay_buffer_distill = hydra.utils.instantiate(
+                self.config.replay_buffer.transformer_col_replay_buffer,
+                device=self.device,
+                env_obs_shape=env_obs_shape,
+                task_obs_shape=(1,),
+                action_shape=action_shape,
+                seq_len=self.seq_len
+            )
+            self.replay_buffer_distill.load_multiple_buffer(buffer_dirs)
+
+            # 5) （可选）准备一个 validation buffer 以便中途评估（如果你想用）
+            self.buffer_dir_val = [utils.make_dir(
+                os.path.join(self.config.setup.save_dir, f"buffer/collective_buffer/validation/{i}")
+            ) for i in self.distill_buffer_names]
+
+            self.replay_buffer_val = hydra.utils.instantiate(
+                self.config.replay_buffer.transformer_col_replay_buffer,
+                device=self.device,
+                env_obs_shape=env_obs_shape,
+                task_obs_shape=(1,),
+                action_shape=action_shape,
+                seq_len=self.seq_len
+            )
+            self.replay_buffer_val.load_multiple_buffer(self.buffer_dir_val)
+
+            # 6) 起始 step（可选恢复）
+            self.wm_start_step = 0
+            if should_resume_experiment:
+                # 直接复用 agent 的 load_latest_step
+                self.wm_start_step = self.col_agent.load_latest_step(model_dir=self.col_model_dir)
+
         else:
             raise NotImplementedError(
                 f"experiment-mode {self.config.experiment.mode} is not supported"

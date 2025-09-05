@@ -637,7 +637,6 @@ class TransformerAgent:
             next_state=next_states,
             reward=rewards.unsqueeze(-1) if rewards.dim() == 1 else rewards,
             task_encoding=task_encoding,
-            reward_bounds=(-10.0, 10.0)  # Can be made configurable
         )
         # Optimize world model
         self._optimizers["world_model"].zero_grad()

@@ -151,6 +151,8 @@ class Experiment(collective_experiment.Experiment):
             self.run_train_student_finetuning()
         elif self.config.experiment.mode == 'distill_policy':
             self.distill_policy()
+        elif self.config.experiment.mode == 'train_world_model':
+            self.run_train_world_model()
         else:
             raise NotImplemented
 
@@ -1587,4 +1589,54 @@ class Experiment(collective_experiment.Experiment):
 
         self.close_envs()
         print("Finished policy distillation.")
+
+    def run_train_world_model(self):
+        """用 TransformerAgent 的 train_world_model 在离线 buffer 上训练 world model。"""
+        exp_config = self.config.experiment
+
+        assert hasattr(self, "col_agent"), \
+            "train_world_model 模式需要在 __init__ 里初始化 self.col_agent（见 collective_experiment.py 新增分支）"
+        assert hasattr(self, "replay_buffer_distill"), \
+            "train_world_model 模式需要准备好训练用的 buffer（见 collective_experiment.py 新增分支）"
+        assert getattr(self.col_agent, "use_world_model", False), \
+            "TransformerAgent.use_world_model=False；请在配置里打开 use_world_model 并提供 world_model_cfg/optimizer_cfg。"
+
+        start_time = time.time()
+        assert self.wm_start_step >= 0
+
+        for step in range(self.wm_start_step, exp_config.num_wm_train_step):
+            # 记录耗时
+            if step % exp_config.col_eval_freq == 0:
+                self.logger.log("wm_train/duration", time.time() - start_time, step)
+                start_time = time.time()
+                self.logger.dump(step)
+
+            # === 核心：调用 agent 的 world model 训练 ===
+            self.col_agent.train_world_model(
+                self.replay_buffer_distill, self.logger, step, tb_log=True
+            )
+            self.wm_start_step += 1
+
+            # 定期保存
+            if exp_config.save.model and step % exp_config.save_freq_transformer == 0:
+                self.col_agent.save(
+                    self.col_model_dir,
+                    step=step,
+                    retain_last_n=exp_config.save.model.retain_last_n,
+                )
+
+        # 收尾保存
+        if exp_config.save.model:
+            self.col_agent.save(
+                self.col_model_dir,
+                step=exp_config.num_wm_train_step,
+                retain_last_n=exp_config.save.model.retain_last_n,
+            )
+
+        # 可选：训练完做一次评估或录视频（如需）
+        # if self.config.experiment.save_video:
+        #     self.record_videos_for_transformer(self.col_agent, seq_len=self.seq_len)
+
+        self.close_envs()
+        print("finished world model training")
 

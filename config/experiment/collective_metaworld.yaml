@@ -87,3 +87,7 @@ envs_to_exclude_during_training: []
 #---------------------distill policy--------------------------
 distill_steps: 200000
 batch_size: 32
+
+#--------------------- world model --------------------------
+num_wm_train_step: 200000   # 你想要的总训练步数
+wm_eval_freq: 2000 
