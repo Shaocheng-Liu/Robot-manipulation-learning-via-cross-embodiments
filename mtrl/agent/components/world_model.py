@@ -185,8 +185,7 @@ class WorldModel(base_component.Component):
             rmin, rmax = reward_bounds
             vmin = symlog(torch.tensor([rmin])).item()
             vmax = symlog(torch.tensor([rmax])).item()
-            bin_size = (vmax - vmin) / max(self.reward_bins - 1, 1)
-            self.dreg_cfg = DRegCfg(num_bins=self.reward_bins, vmin=vmin, vmax=vmax, bin_size=bin_size)
+            self.dreg_cfg = DRegCfg(num_bins=self.reward_bins, vmin=vmin, vmax=vmax)
         else:
             self.dreg_cfg = None
 
@@ -262,8 +261,7 @@ class WorldModel(base_component.Component):
         if math.isclose(vmin, vmax):
             eps = 1e-3
             vmin, vmax = vmin - eps, vmax + eps
-        bin_size = (vmax - vmin) / max(self.reward_bins - 1, 1)
-        self.dreg_cfg = DRegCfg(num_bins=self.reward_bins, vmin=vmin, vmax=vmax, bin_size=bin_size)
+        self.dreg_cfg = DRegCfg(num_bins=self.reward_bins, vmin=vmin, vmax=vmax)
 
     @staticmethod
     def estimate_reward_bounds_from_buffer(
