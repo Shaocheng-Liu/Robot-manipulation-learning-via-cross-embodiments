@@ -1605,9 +1605,6 @@ class Experiment(collective_experiment.Experiment):
         assert self.wm_start_step >= 0
 
         vmin, vmax = self.col_agent.world_model.estimate_reward_bounds_from_buffer(self.replay_buffer_distill)
-        # 记个日志方便核对
-        self.logger.log("wm/rmin", vmin, 0)
-        self.logger.log("wm/rmax", vmax, 0)
 
         for step in range(self.wm_start_step, exp_config.num_wm_train_step):
             # 记录耗时
