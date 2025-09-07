@@ -630,6 +630,11 @@ class TransformerAgent:
                 disable_grad=True, mask=None
             )
 
+        if step == 0:  # 只打印一次
+            print(f"[TA->WM/DEBUG] call compute_loss with:")
+            print(f"  states{tuple(states.shape)} actions{tuple(actions.shape)} rewards{tuple(rewards.shape)}")
+            print(f"  next_states{tuple(next_states.shape)} task_encoding{tuple(task_encoding.shape)}")
+
         # Compute world model losses
         dynamics_loss, reward_loss, total_loss = self.world_model.compute_loss(
             state=states,

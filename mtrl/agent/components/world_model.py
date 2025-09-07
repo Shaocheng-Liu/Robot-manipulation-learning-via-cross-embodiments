@@ -92,6 +92,11 @@ class WorldModelEncoder(base_component.Component):
 
     def forward(self, state: TensorType, task_encoding: TensorType) -> TensorType:
         x = torch.cat([state, task_encoding], dim=-1)
+        if not hasattr(self, "_dbg_printed"):
+            print(f"[WM-ENC/DEBUG] state{tuple(state.shape)} + task{tuple(task_encoding.shape)} -> x{tuple(x.shape)}")
+            assert x.shape[-1] == self.expected_in, \
+                f"encoder input {x.shape[-1]} != expected_in {self.expected_in}"
+            self._dbg_printed = True
         return self.encoder(x)
 
 
@@ -179,6 +184,15 @@ class WorldModel(base_component.Component):
             reward_bins=reward_bins,
             dropout=dropout,
         )
+
+        self.expected_in = state_dim + task_encoding_dim  # 记录预期输入
+        # 找到 encoder 里的第一层 Linear（不管是 nn.Linear 还是包在 NormedLinear 里）
+        first_linear_in = None
+        for m in self.encoder.modules():
+            if isinstance(m, nn.Linear):
+                first_linear_in = m.in_features
+                break
+        print(f"[WM-ENC/DEBUG] expect_in={self.expected_in}, first_linear_in={first_linear_in}, latent_dim={latent_dim}")
 
         # dreg（two-hot 离散回归配置）
         if self.reward_bins > 1:
