@@ -619,6 +619,7 @@ class TransformerAgent:
         else:
             idxs = replay_buffer_list.sample_indices()
             states, actions, rewards, next_states, _, _, _, _, task_encoding = replay_buffer_list.sample_new(idxs)
+            next_states = _compress_meta_state(next_states)
 
         if self.use_zeros:
             task_encoding = torch.zeros((states.shape[0], self.cls_dim)).to(self.device)
@@ -1262,6 +1263,15 @@ def _get_step_from_model_path(_path: str) -> int:
         int: step for tracking the training of the agent.
     """
     return int(_path.rsplit("/", 1)[-1].replace(".pt", "").rsplit("_", 1)[-1])
+
+def _compress_meta_state(x: torch.Tensor) -> torch.Tensor:
+    # x: [N, 39] 或 [N, 21]；幂等处理
+    if x.dim() == 1:
+        x = x.unsqueeze(0)
+    if x.size(-1) == 39:
+        # 只保留当前时刻: 0:18 与 36:39 -> 18+3 = 21
+        return torch.cat([x[:, :18], x[:, 36:39]], dim=-1)
+    return x
 
 
 @overload

@@ -580,11 +580,11 @@ class Experiment(checkpointable.Checkpointable):
 
         elif self.config.experiment.mode == 'train_world_model':
             # === 仅训练 TransformerAgent 的 world model ===
-
+            env_obs_shape_wm = [21]
             # 1) 实例化 TransformerAgent（和 distill_collective_transformer 使用同一个 builder）
             self.col_agent = hydra.utils.instantiate(
                 self.config.transformer_collective_network.builder,
-                env_obs_shape=env_obs_shape,
+                env_obs_shape=env_obs_shape_wm,
                 action_shape=action_shape,
                 action_range=[
                     float(self.action_space.low.min()),
