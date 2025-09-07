@@ -1607,7 +1607,7 @@ class Experiment(collective_experiment.Experiment):
         vmin, vmax = self.col_agent.world_model.estimate_reward_bounds_from_buffer(self.replay_buffer_distill)
 
         _dbg_once = False
-        idxs = self.replay_buffer_distill.sample_indices(4)
+        idxs = self.replay_buffer_distill.sample_indices()
         s, a, r, ns, _, _, _, _, enc = self.replay_buffer_distill.sample_new(idxs)
         print(f"[RB/DEBUG] states{tuple(s.shape)} actions{tuple(a.shape)} rewards{tuple(r.shape)} next_states{tuple(ns.shape)} enc{tuple(enc.shape)}")
         print(f"[RB/DEBUG] states_dim={s.shape[-1]}  (这是WM真正看到的state维度；应当=compressed_state_dim)")
