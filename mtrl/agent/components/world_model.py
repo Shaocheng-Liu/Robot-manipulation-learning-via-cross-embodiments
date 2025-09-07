@@ -89,6 +89,7 @@ class WorldModelEncoder(base_component.Component):
         input_dim = state_dim + task_encoding_dim
         hidden_dims = [enc_dim] * max(num_enc_layers - 1, 1)
         self.encoder = mlp(input_dim, hidden_dims, latent_dim, act=SimNorm(simnorm_dim), dropout=dropout)
+        self.expected_in = state_dim + task_encoding_dim
 
     def forward(self, state: TensorType, task_encoding: TensorType) -> TensorType:
         x = torch.cat([state, task_encoding], dim=-1)
