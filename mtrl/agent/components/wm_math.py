@@ -4,11 +4,13 @@ import torch.nn.functional as F
 @torch.jit.script
 def symlog(x: torch.Tensor) -> torch.Tensor:
     # sign(x) * log(1 + |x|)
+    x = x.to(torch.float32)
     return torch.sign(x) * torch.log1p(torch.abs(x))
 
 @torch.jit.script
 def symexp(x: torch.Tensor) -> torch.Tensor:
     # sign(x) * (exp(|x|) - 1)
+    x = x.to(torch.float32)
     return torch.sign(x) * (torch.exp(torch.abs(x)) - 1.0)
 
 @torch.jit.script
