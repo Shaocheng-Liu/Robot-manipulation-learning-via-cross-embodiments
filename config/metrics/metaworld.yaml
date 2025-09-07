@@ -42,6 +42,10 @@ train:
     [K_comps, DP_Comps, int, average],
     [kl_weight, KLW, float, average],
     [kl_weight_, KLW, float, average],
+    [wm_duration, WM/DUR, time, average],
+    [world_model_dynamics_loss, WM/DynLoss, float, average],
+    [world_model_reward_loss, WM/RwdLoss, float, average],
+    [world_model_total_loss, WM/Total, float, average],
   ]
 eval:
   [
