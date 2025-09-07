@@ -35,6 +35,6 @@ builder:
   mse_loss_actor: True
   cls_alpha: 1
 
-  use_world_model: False  # Set to True to enable world model
+  use_world_model: True  # Set to True to enable world model
   world_model_cfg: ${transformer_collective_network.world_model}
   world_model_optimizer_cfg: ${transformer_collective_network.optimizers.world_model}
