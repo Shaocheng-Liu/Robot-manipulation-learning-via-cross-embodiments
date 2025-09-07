@@ -1609,7 +1609,7 @@ class Experiment(collective_experiment.Experiment):
         for step in range(self.wm_start_step, exp_config.num_wm_train_step):
             # 记录耗时
             if step % exp_config.col_eval_freq == 0:
-                self.logger.log("wm_train/duration", time.time() - start_time, step)
+                self.logger.log("train/duration", time.time() - start_time, step)
                 start_time = time.time()
                 self.logger.dump(step)
 
