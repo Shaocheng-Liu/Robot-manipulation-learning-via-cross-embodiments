@@ -1176,23 +1176,35 @@ class TransformerAgent:
             )
 
     def save_only_world_model(self, model_dir: str, step: int, retain_last_n: int):
-        """只保存 world_model（权重）"""
+        items = []
+        if hasattr(self, "world_model") and self.world_model is not None:
+            items.append((self.world_model, "world_model"))
+        if not items:
+            print("No world_model to save.")
+            return
         return self.save_components_or_optimizers(
-            component_or_optimizer_list=["world_model"],
+            component_or_optimizer_list=items,
             model_dir=model_dir,
             step=step,
             retain_last_n=retain_last_n,
-            suffix="",
+            suffix="",  # 权重不加优化器后缀
         )
 
     def save_world_model_optimizer(self, model_dir: str, step: int, retain_last_n: int):
         """只保存 world_model 的 optimizer（可选）"""
+        opt = self._optimizers.get("world_model", None) if hasattr(self, "_optimizers") else None
+        items = []
+        if opt is not None:
+            items.append((opt, "world_model"))
+        if not items:
+            print("No world_model optimizer to save.")
+            return
         return self.save_components_or_optimizers(
-            component_or_optimizer_list=["world_model"],
+            component_or_optimizer_list=items,
             model_dir=model_dir,
             step=step,
             retain_last_n=retain_last_n,
-            suffix=self._optimizer_suffix,
+            suffix=self._optimizer_suffix,  # 优化器统一加后缀
         )
 
     def load_latest_step(self, model_dir: str) -> int:
