@@ -1609,39 +1609,39 @@ class Experiment(collective_experiment.Experiment):
         self.logger.log("wm/rmin", vmin, 0)
         self.logger.log("wm/rmax", vmax, 0)
 
-        # for step in range(self.wm_start_step, exp_config.num_wm_train_step):
-        #     # 记录耗时
-        #     if step % exp_config.col_eval_freq == 0:
-        #         self.logger.log("wm_train/duration", time.time() - start_time, step)
-        #         start_time = time.time()
-        #         self.logger.dump(step)
+        for step in range(self.wm_start_step, exp_config.num_wm_train_step):
+            # 记录耗时
+            if step % exp_config.col_eval_freq == 0:
+                self.logger.log("wm_train/duration", time.time() - start_time, step)
+                start_time = time.time()
+                self.logger.dump(step)
 
-        #     # === 核心：调用 agent 的 world model 训练 ===
-        #     self.col_agent.train_world_model(
-        #         self.replay_buffer_distill, self.logger, step, tb_log=True
-        #     )
-        #     self.wm_start_step += 1
+            # === 核心：调用 agent 的 world model 训练 ===
+            self.col_agent.train_world_model(
+                self.replay_buffer_distill, self.logger, step, tb_log=True
+            )
+            self.wm_start_step += 1
 
-        #     # 定期保存
-        #     if exp_config.save.model and step % exp_config.save_freq_transformer == 0:
-        #         self.col_agent.save(
-        #             self.col_model_dir,
-        #             step=step,
-        #             retain_last_n=exp_config.save.model.retain_last_n,
-        #         )
+            # 定期保存
+            if exp_config.save.model and step % exp_config.save_freq_transformer == 0:
+                self.col_agent.save_only_world_model(
+                    self.col_model_dir,
+                    step=step,
+                    retain_last_n=exp_config.save.model.retain_last_n,
+                )
 
-        # # 收尾保存
-        # if exp_config.save.model:
-        #     self.col_agent.save(
-        #         self.col_model_dir,
-        #         step=exp_config.num_wm_train_step,
-        #         retain_last_n=exp_config.save.model.retain_last_n,
-        #     )
+        # 收尾保存
+        if exp_config.save.model:
+            self.col_agent.save_only_world_model(
+                self.col_model_dir,
+                step=exp_config.num_wm_train_step,
+                retain_last_n=exp_config.save.model.retain_last_n,
+            )
 
-        # # 可选：训练完做一次评估或录视频（如需）
-        # # if self.config.experiment.save_video:
-        # #     self.record_videos_for_transformer(self.col_agent, seq_len=self.seq_len)
+        # 可选：训练完做一次评估或录视频（如需）
+        # if self.config.experiment.save_video:
+        #     self.record_videos_for_transformer(self.col_agent, seq_len=self.seq_len)
 
-        # self.close_envs()
+        self.close_envs()
         print("finished world model training")
 

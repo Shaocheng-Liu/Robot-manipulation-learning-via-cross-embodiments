@@ -74,7 +74,7 @@ class TransformerAgent:
         self.use_zeros = use_zeros
         self.mse_loss_actor = mse_loss_actor
         self.cls_dim = transformer_encoder_cfg.prediction_head_cls.latent_dim
-        self._opimizer_suffix = "_optimizer"
+        self._optimizer_suffix = "_optimizer"
         self._components: Dict[str, ModelType] = {}
         self._optimizers: Dict[str, OptimizerType] = {}
         self.seq_len = 20
@@ -1084,7 +1084,7 @@ class TransformerAgent:
             model_dir=model_dir,
             step=step,
             retain_last_n=retain_last_n,
-            suffix=self._opimizer_suffix,
+            suffix=self._optimizer_suffix,
         )
 
     def save_components_or_optimizers(
@@ -1165,9 +1165,29 @@ class TransformerAgent:
             optimizer = _load_component_or_optimizer(
                 component_or_optimizer=optimizer,
                 model_dir=model_dir,
-                name=name + self._opimizer_suffix,
+                name=name + self._optimizer_suffix,
                 step=step,
             )
+
+    def save_only_world_model(self, model_dir: str, step: int, retain_last_n: int):
+        """只保存 world_model（权重）"""
+        return self.save_components_or_optimizers(
+            component_or_optimizer_list=["world_model"],
+            model_dir=model_dir,
+            step=step,
+            retain_last_n=retain_last_n,
+            suffix="",
+        )
+
+    def save_world_model_optimizer(self, model_dir: str, step: int, retain_last_n: int):
+        """只保存 world_model 的 optimizer（可选）"""
+        return self.save_components_or_optimizers(
+            component_or_optimizer_list=["world_model"],
+            model_dir=model_dir,
+            step=step,
+            retain_last_n=retain_last_n,
+            suffix=self._optimizer_suffix,
+        )
 
     def load_latest_step(self, model_dir: str) -> int:
         """Load the agent using the latest training step.

@@ -17,4 +17,4 @@ reward_bins: 101  # Discretized reward prediction bins
 simnorm_dim: 8
 
 # World model training parameters
-reward_bounds: [-10.0, 10.0]  # Min/max reward for discretization
+reward_bounds: [-2.5, 2.5]  # Min/max reward for discretization
