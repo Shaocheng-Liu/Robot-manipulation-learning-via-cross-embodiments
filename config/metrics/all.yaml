@@ -32,6 +32,10 @@ train:
     [alpha_loss_agent_index_, null, float, average],
     [alpha_value_agent_index_, null, float, average],
     [ae_loss_agent_index_, null, float, average],
+    [wm_duration, WM/DUR, time, average],
+    [world_model_dynamics_loss, WM/DynLoss, float, average],
+    [world_model_reward_loss, WM/RwdLoss, float, average],
+    [world_model_total_loss, WM/Total, float, average],
   ]
 eval:
   [
