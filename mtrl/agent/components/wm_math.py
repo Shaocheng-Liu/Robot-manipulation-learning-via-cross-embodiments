@@ -47,16 +47,21 @@ def two_hot(x: torch.Tensor, num_bins: int, vmin: float, vmax: float, bin_size: 
         return x
     if num_bins == 1:
         return symlog(x)
-    x = torch.clamp(symlog(x).squeeze(-1), vmin, vmax)
-    # 落在哪个 bin
-    f = (x - vmin) / bin_size
-    bin_idx = torch.floor(f)
-    bin_off = (f - bin_idx).unsqueeze(-1)          # [B,1]
-    bin_idx = bin_idx.long().unsqueeze(-1)         # [B,1]
+    x = torch.clamp(symlog(x).squeeze(-1), vmin, vmax)      # [B]
+    f = (x - vmin) / bin_size                               # 连续位置
+    left = torch.floor(f).to(torch.long)                    # [B]
+    frac = (f - left.to(f.dtype)).unsqueeze(-1)             # [B,1], 右侧权重
+
     B = x.shape[0]
     oh = torch.zeros(B, num_bins, device=x.device, dtype=x.dtype)
-    oh.scatter_(1, bin_idx.clamp(min=0, max=num_bins-1), 1.0 - bin_off)
-    oh.scatter_(1, (bin_idx + 1) % num_bins, bin_off)
+
+    # 左 bin
+    left_idx = left.clamp(0, num_bins - 1).unsqueeze(-1)    # [B,1]
+    oh.scatter_(1, left_idx, 1.0 - frac)
+
+    # 右 bin（不环绕，直接 clamp 到最右 bin）
+    right = (left + 1).clamp(max=num_bins - 1).unsqueeze(-1)
+    oh.scatter_(1, right, frac)
     return oh
 
 @torch.jit.script
