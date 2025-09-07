@@ -28,7 +28,7 @@ transformer_col_replay_buffer:
   env_obs_shape: # Will be auto populated
   action_shape: # Will be auto populated
   capacity: 2000000
-  batch_size: 512
+  batch_size: 256
   normalize_rewards: False
   task_encoding_shape: 6 
   compressed_state: True
