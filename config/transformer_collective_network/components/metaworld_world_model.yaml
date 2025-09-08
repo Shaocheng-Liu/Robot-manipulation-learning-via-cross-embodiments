@@ -18,3 +18,7 @@ simnorm_dim: 8
 
 # World model training parameters
 reward_bounds: [-10, 10]  # Min/max reward for discretization
+
+pretrained_dir: "${project_root}/logs/experiment_test/model_dir/model_world"  # 训练 WM 时保存的目录
+pretrained_step: null                                      # 指定整数步；null 表示自动找 metadata 或最新
+freeze_after_load: true                                     # 蒸馏阶段一般不再训练 WM

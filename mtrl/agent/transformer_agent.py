@@ -91,6 +91,35 @@ class TransformerAgent:
                 **world_model_cfg
             ).to(self.device)
 
+            pretrained_dir = world_model_cfg.get("pretrained_dir", None)
+            pretrained_step = world_model_cfg.get("pretrained_step", None)
+            freeze_after_load = bool(world_model_cfg.get("freeze_after_load", True))
+            if pretrained_dir:
+                if not os.path.exists(pretrained_dir):
+                    raise FileNotFoundError(f"Pretrained world model directory not found: {pretrained_dir}")
+                # 只加载 world_model 权重（不动 actor/critic 等）
+                try:
+                    # 如果你已经添加了前面给你的 load_world_model() 方法，优先用它
+                    if hasattr(self, "load_world_model"):
+                        step_loaded = self.load_world_model(pretrained_dir, step=pretrained_step, load_optimizer=False)
+                        print(f"[WM] Successfully loaded world_model from: {pretrained_dir} (step={step_loaded})")
+                    else:
+                        # 后备：通用的 load 接口（会尝试加载所有组件；没有文件会打印提示，不会报错）
+                        if pretrained_step is None:
+                            _ = self.load_latest_step(pretrained_dir)
+                        else:
+                            self.load(pretrained_dir, step=pretrained_step)
+                    print(f"[WM] loaded pretrained world_model from: {pretrained_dir} (step={pretrained_step})")
+                except Exception as e:
+                    print(f"[WM][WARN] failed to load pretrained world_model from {pretrained_dir}: {e}")
+
+                if freeze_after_load:
+                    self.world_model.eval()
+                    for p in self.world_model.parameters():
+                        p.requires_grad_(False)
+                    print("[WM] frozen after loading (eval mode).")
+                self._exclude_wm_from_ckpt = True # 保存时不再保存 WM   
+
             # When using world model, actor uses latent states
             actor_input_dim = world_model_cfg.get('latent_dim', 512)
             if self.additional_input_state:
@@ -1017,7 +1046,11 @@ class TransformerAgent:
         Returns:
             List[Tuple[ModelType, str]]: list of tuples of (model, name).
         """
-        return [(value, key) for key, value in self._components.items()]
+        items = [(value, key) for key, value in self._components.items()]
+        if getattr(self, "_exclude_wm_from_ckpt", False):
+            items = [(m, n) for (m, n) in items if n != "world_model"]
+        return items
+
 
     def get_optimizer_name_list_for_checkpointing(
         self,
@@ -1027,7 +1060,10 @@ class TransformerAgent:
         Returns:
             List[Tuple[OptimizerType, str]]: list of tuples of (optimizer, name).
         """
-        return [(value, key) for key, value in self._optimizers.items()]
+        items = [(value, key) for key, value in self._optimizers.items()]
+        if getattr(self, "_exclude_wm_from_ckpt", False):
+            items = [(opt, n) for (opt, n) in items if n != "world_model"]
+        return items
 
     def save(
         self,
@@ -1243,6 +1279,44 @@ class TransformerAgent:
         else:
             metadata = torch.load(metadata_path)
         return metadata
+    
+    def load_world_model(self, model_dir: str, step: Optional[int] = None, load_optimizer: bool = False) -> int:
+        """只加载 world_model（以及可选的 optimizer）。返回加载的 step。"""
+        from pathlib import Path
+
+        def _latest_step(name: str) -> Optional[int]:
+            p = Path(model_dir)
+            cands = sorted(p.glob(f"{name}_*.pt"))
+            if not cands:
+                return None
+            steps = [int(x.stem.split("_")[-1]) for x in cands]
+            return max(steps)
+
+        # 若没给 step，则优先从 metadata 取；没有就从文件名推断
+        meta = self.load_metadata(model_dir)
+        if step is None:
+            step = (meta or {}).get("step", None)
+            if step is None:
+                step = _latest_step("world_model")
+        if step is None:
+            raise FileNotFoundError(f"No world_model_*.pt found under {model_dir}")
+
+        # 只加载 world_model
+        wm_path = os.path.join(model_dir, f"world_model_{step}.pt")
+        state = torch.load(wm_path, map_location=self.device)
+        self.world_model.load_state_dict(state)
+        print(f"[TransformerAgent] world_model loaded from {wm_path}")
+
+        # 可选：加载 optimizer
+        if load_optimizer and hasattr(self, "_optimizers") and "world_model" in self._optimizers:
+            opt_path = os.path.join(model_dir, f"world_model{self._optimizer_suffix}_{step}.pt")
+            if os.path.exists(opt_path):
+                self._optimizers["world_model"].load_state_dict(torch.load(opt_path, map_location=self.device))
+                print(f"[TransformerAgent] world_model optimizer loaded from {opt_path}")
+            else:
+                print(f"[TransformerAgent] No optimizer file: {opt_path}")
+
+        return step
 
 
 def _get_reverse_sorted_existing_versions(model_dir_path: Path, name: str) -> List[str]:
