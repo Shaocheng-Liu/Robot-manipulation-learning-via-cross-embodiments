@@ -153,61 +153,105 @@ class TransformerReplayBuffer(object):
         return env_obs, actions, rewards, next_env_obs, mus, log_stds, q_targets, env_indices, task_encoding
     
     def build_sequences_for_indices(self, idxs, seq_len, device=None):
-        device = self.device if device is None else device
-        ep_len = 400             
-        B = len(idxs)
-        S = self.env_obses.shape[-1]
-        A = self.actions.shape[-1]
+        # device = self.device if device is None else device
+        # ep_len = 400             
+        # B = len(idxs)
+        # S = self.env_obses.shape[-1]
+        # A = self.actions.shape[-1]
         
-        def left_pad(x, target_len):
-            cur = x.shape[0]
-            if cur == target_len:
-                return x
-            pad_n = target_len - cur
-            if cur == 0:
-                return torch.zeros(target_len, x.shape[1], device=x.device, dtype=x.dtype)
-            pad = x[:1].expand(pad_n, -1)
-            return torch.cat([pad, x], dim=0)
+        # def left_pad(x, target_len):
+        #     cur = x.shape[0]
+        #     if cur == target_len:
+        #         return x
+        #     pad_n = target_len - cur
+        #     if cur == 0:
+        #         return torch.zeros(target_len, x.shape[1], device=x.device, dtype=x.dtype)
+        #     pad = x[:1].expand(pad_n, -1)
+        #     return torch.cat([pad, x], dim=0)
 
-        state_seqs   = []
-        action_seqs  = []
-        reward_seqs  = []
-        curr_states  = []
-        env_indices  = []
+        # state_seqs   = []
+        # action_seqs  = []
+        # reward_seqs  = []
+        # curr_states  = []
+        # env_indices  = []
 
-        for idx in idxs:
-            ep = idx // ep_len
-            t  = idx %  ep_len
+        # for idx in idxs:
+        #     ep = idx // ep_len
+        #     t  = idx %  ep_len
 
-            # current step
-            curr_state = torch.as_tensor(self.env_obses[ep, t], device=device).float()
+        #     # current step
+        #     curr_state = torch.as_tensor(self.env_obses[ep, t], device=device).float()
 
-            # window start
-            T = seq_len
-            start_s = max(0, t - (T - 1))    # states: [start_s .. t] 
-            start_ar = start_s                # actions/rewards: [start_ar .. t-1] 
-            end_ar = max(0, t)               
+        #     # window start
+        #     T = seq_len
+        #     start_s = max(0, t - (T - 1))    # states: [start_s .. t] 
+        #     start_ar = start_s                # actions/rewards: [start_ar .. t-1] 
+        #     end_ar = max(0, t)               
 
-            # get original segments
-            state_win = torch.as_tensor(self.env_obses[ep, start_s:t+1], device=device).float()            # [<=T, S_env]
-            act_win = torch.as_tensor(self.actions[ep, start_ar:end_ar], device=device).float()          # [<=T-1, A]
-            rew_win = torch.as_tensor(self.rewards[ep, start_ar:end_ar], device=device).float()          # [<=T-1, 1]
+        #     # get original segments
+        #     state_win = torch.as_tensor(self.env_obses[ep, start_s:t+1], device=device).float()            # [<=T, S_env]
+        #     act_win = torch.as_tensor(self.actions[ep, start_ar:end_ar], device=device).float()          # [<=T-1, A]
+        #     rew_win = torch.as_tensor(self.rewards[ep, start_ar:end_ar], device=device).float()          # [<=T-1, 1]
 
-            state_win = left_pad(state_win, T)           # -> [T, S]
-            act_win   = left_pad(act_win, T-1)           # -> [T-1, A]
-            rew_win   = left_pad(rew_win, T-1)           # -> [T-1, 1]
+        #     state_win = left_pad(state_win, T)           # -> [T, S]
+        #     act_win   = left_pad(act_win, T-1)           # -> [T-1, A]
+        #     rew_win   = left_pad(rew_win, T-1)           # -> [T-1, 1]
 
-            state_seqs.append(state_win)
-            action_seqs.append(act_win)
-            reward_seqs.append(rew_win)
-            curr_states.append(curr_state)
-            env_indices.append(self.task_obs[ep, t])
+        #     state_seqs.append(state_win)
+        #     action_seqs.append(act_win)
+        #     reward_seqs.append(rew_win)
+        #     curr_states.append(curr_state)
+        #     env_indices.append(self.task_obs[ep, t])
 
-        state_seqs  = torch.stack(state_seqs,  dim=0)  # [B, T,   S]
-        action_seqs = torch.stack(action_seqs, dim=0)  # [B, T-1, A]
-        reward_seqs = torch.stack(reward_seqs, dim=0)  # [B, T-1, 1]
-        curr_states = torch.stack(curr_states, dim=0)  # [B, S]
-        env_indices = torch.as_tensor(env_indices, device=device).long().unsqueeze(-1)  # [B,1]
+        # state_seqs  = torch.stack(state_seqs,  dim=0)  # [B, T,   S]
+        # action_seqs = torch.stack(action_seqs, dim=0)  # [B, T-1, A]
+        # reward_seqs = torch.stack(reward_seqs, dim=0)  # [B, T-1, 1]
+        # curr_states = torch.stack(curr_states, dim=0)  # [B, S]
+        # env_indices = torch.as_tensor(env_indices, device=device).long().unsqueeze(-1)  # [B,1]
+
+        # return state_seqs, action_seqs, reward_seqs, curr_states, env_indices
+
+        device = self.device if device is None else device
+        ep_len = 400  # 原来固定 400，改成从数据推断
+        B      = len(idxs)
+        T      = seq_len
+
+        # 1) 全部在 CPU 上构造索引 + 切片（避免把整段 buffer 搬到 GPU）
+        #    注意：from_numpy 不会复制数据，开销小
+        env_obs = torch.from_numpy(self.env_obses)   # [E, L, S]
+        acts    = torch.from_numpy(self.actions)     # [E, L, A]
+        rews    = torch.from_numpy(self.rewards)     # [E, L, 1]
+        tasks   = torch.from_numpy(self.task_obs)    # [E, L]
+
+        # 2) 批量计算 (episode, timestep)
+        idxs_np = np.asarray(idxs)
+        ep = torch.from_numpy(idxs_np // ep_len).long()   # [B]
+        t  = torch.from_numpy(idxs_np %  ep_len).long()   # [B]
+
+        # 3) 构造时间窗口索引
+        # states 窗口长度 = T，actions/rewards 窗口长度 = T-1
+        base_T  = torch.arange(T,   dtype=torch.long).view(1, T)       # [1, T]
+        base_T1 = torch.arange(T-1, dtype=torch.long).view(1, T-1)     # [1, T-1]
+
+        # 左侧补齐的“起点偏移”：t-(T-1)，若为负数说明需要左侧 padding
+        start = (t - (T - 1)).view(B, 1)  # [B, 1]
+
+        # —— 关键：用 clamp(min=0) 实现“左侧用首帧重复补齐”的效果 ——
+        # 对于 states：最终索引范围是 [max(0, t-(T-1)) .. t]
+        time_idx_T  = (start + base_T).clamp(min=0)     # [B, T]    每行最后一个就是 t
+        # 对于 actions/rewards：最后一个时间步是 t-1
+        time_idx_T1 = (start + base_T1).clamp(min=0)    # [B, T-1]  每行最后一个就是 t-1
+
+        # 扩展 episode 维度，做成逐元素高级索引
+        ep_T  = ep.view(B, 1).expand(-1, T)     # [B, T]
+        ep_T1 = ep.view(B, 1).expand(-1, T-1)   # [B, T-1]
+
+        # 4) 一次性高级索引取出窗口（仍在 CPU 上），再搬到目标 device
+        state_seqs  = env_obs[ep_T,  time_idx_T ].to(device=device, dtype=torch.float32)  # [B, T,   S]
+        action_seqs = acts[   ep_T1, time_idx_T1].to(device=device, dtype=torch.float32)  # [B, T-1, A]
+        reward_seqs = rews[   ep_T1, time_idx_T1].to(device=device, dtype=torch.float32)  # [B, T-1, 1]
+        curr_states = env_obs[ep, t].to(device=device, dtype=torch.float32)               # [B, S]
+        env_indices = tasks[ep, t].to(device=device).long().unsqueeze(-1)                 # [B, 1]
 
         return state_seqs, action_seqs, reward_seqs, curr_states, env_indices
 

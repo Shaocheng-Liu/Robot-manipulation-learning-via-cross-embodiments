@@ -1632,6 +1632,10 @@ class Experiment(collective_experiment.Experiment):
                     step=step,
                     retain_last_n=exp_config.save.model.retain_last_n,
                 )
+                self.col_agent.save_metadata(self.col_model_dir, step=step)
+                self.col_agent.save_world_model_optimizer(self.col_model_dir,
+                    step=step,
+                    retain_last_n=exp_config.save.model.retain_last_n)
 
         # 收尾保存
         if exp_config.save.model:
@@ -1640,6 +1644,10 @@ class Experiment(collective_experiment.Experiment):
                 step=exp_config.num_wm_train_step,
                 retain_last_n=exp_config.save.model.retain_last_n,
             )
+            self.col_agent.save_metadata(self.col_model_dir, step=exp_config.num_wm_train_step)
+            self.col_agent.save_world_model_optimizer(self.col_model_dir,
+                step=exp_config.num_wm_train_step,
+                retain_last_n=exp_config.save.model.retain_last_n)
 
         # 可选：训练完做一次评估或录视频（如需）
         # if self.config.experiment.save_video:
