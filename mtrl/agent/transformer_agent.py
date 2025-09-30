@@ -84,16 +84,20 @@ class TransformerAgent:
         # components
         if self.use_world_model and world_model_cfg is not None:
             # Initialize world model
+            # 1. 复制配置字典，以防修改影响其他地方
+            wm_cfg_for_init = world_model_cfg.copy()
+
+            # 2. 从字典中弹出（pop）加载相关的参数，这样它们就不会被传给WorldModel的构造函数
+            pretrained_dir = wm_cfg_for_init.pop("pretrained_dir", None)
+            pretrained_step = wm_cfg_for_init.pop("pretrained_step", None)
+            freeze_after_load = wm_cfg_for_init.pop("freeze_after_load", True)
             self.world_model = WorldModel(
                 state_dim=env_obs_shape[0],
                 action_dim=action_shape[0],
                 task_encoding_dim=self.cls_dim,
-                **world_model_cfg
+                **wm_cfg_for_init
             ).to(self.device)
 
-            pretrained_dir = world_model_cfg.get("pretrained_dir", None)
-            pretrained_step = world_model_cfg.get("pretrained_step", None)
-            freeze_after_load = bool(world_model_cfg.get("freeze_after_load", True))
             if pretrained_dir:
                 if not os.path.exists(pretrained_dir):
                     raise FileNotFoundError(f"Pretrained world model directory not found: {pretrained_dir}")
