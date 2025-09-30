@@ -85,7 +85,7 @@ class TransformerAgent:
         if self.use_world_model and world_model_cfg is not None:
             # Initialize world model
             # 1. 复制配置字典，以防修改影响其他地方
-            wm_cfg_for_init = world_model_cfg.copy()
+            wm_cfg_for_init = dict(world_model_cfg)
 
             # 2. 从字典中弹出（pop）加载相关的参数，这样它们就不会被传给WorldModel的构造函数
             pretrained_dir = wm_cfg_for_init.pop("pretrained_dir", None)
