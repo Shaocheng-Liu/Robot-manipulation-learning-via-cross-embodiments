@@ -79,6 +79,10 @@ class TransformerAgent:
         self._optimizers: Dict[str, OptimizerType] = {}
         self.seq_len = 20
 
+        print("\n" + "="*50)
+        print(f"🕵️  [AGENT INIT CHECK] TransformerAgent received `env_obs_shape`: {env_obs_shape}")
+        print("="*50 + "\n")
+
         self.use_world_model = use_world_model
 
         # components
@@ -500,6 +504,19 @@ class TransformerAgent:
                 actor_input = self.world_model.encode(current_state, task_encoding)
             else:
                 actor_input = task_encoding
+
+        expected_input_dim = self.actor.model[0].in_features  
+            # 我们构造的实际输入
+        actual_input_dim = actor_input.shape[1]
+
+        if step == 0: # 只在第一次训练时打印，避免刷屏
+                print("\n" + "-"*50)
+                print(self.actor)
+                print(f"🕵️  [DISTILL ACTOR CHECK] Step={step}")
+                print(f"  - Data `current_state` dim: {current_state.shape[1]}")
+                print(f"  - Actor's 1st layer expects input dim: {expected_input_dim}")
+                print(f"  - Actual `actor_input` dim being fed: {actual_input_dim}")
+                print("-"*50 + "\n")
 
         mu, _, _, log_std = self.actor(actor_input)
 
