@@ -506,13 +506,13 @@ class TransformerAgent:
         actual_input_dim = actor_input.shape[1]
 
 
-        print("\n" + "-"*50)
-        print(self.actor)
-        print(f"🕵️  [DISTILL ACTOR CHECK] Step={step}")
-        print(f"  - Data `current_state` dim: {current_state.shape[1]}")
-        print(f"  - Actor's 1st layer expects input dim: {expected_input_dim}")
-        print(f"  - Actual `actor_input` dim being fed: {actual_input_dim}")
-        print("-"*50 + "\n")
+        # print("\n" + "-"*50)
+        # print(self.actor)
+        # print(f"🕵️  [DISTILL ACTOR CHECK] Step={step}")
+        # print(f"  - Data `current_state` dim: {current_state.shape[1]}")
+        # print(f"  - Actor's 1st layer expects input dim: {expected_input_dim}")
+        # print(f"  - Actual `actor_input` dim being fed: {actual_input_dim}")
+        # print("-"*50 + "\n")
 
         mu, _, _, log_std = self.actor(actor_input)
 
