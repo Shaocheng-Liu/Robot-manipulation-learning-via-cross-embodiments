@@ -73,7 +73,7 @@
 </mujoco>
 -->
 
-<mujoco>
+<!-- <mujoco>
   <include file="../scene/basic_scene.xml"/>
   <include file="../objects/assets/buttonbox_dependencies.xml"/>
   <include file="../objects/assets/xyz_base_dependencies.xml"/>
@@ -95,9 +95,9 @@
     <equality>
         <weld body1="mocap" body2="hand" solref="0.02 1"/>
     </equality>
-</mujoco>
+</mujoco> -->
 
-<!-- <mujoco>
+<mujoco>
   <include file="../scene/basic_scene.xml"/>
   <include file="../objects/assets/buttonbox_dependencies.xml"/>
   <include file="../objects/assets/xyz_base_dependencies_ur10e.xml"/>
@@ -130,4 +130,4 @@
   <equality>
     <weld body1="mocap" body2="hand" solref="0.02 1"/>
   </equality>
-</mujoco> -->
+</mujoco>
