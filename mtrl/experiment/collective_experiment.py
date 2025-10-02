@@ -270,6 +270,61 @@ class Experiment(checkpointable.Checkpointable):
 
             if should_resume_experiment:
                 self.col_start_step = self.col_agent.load_latest_step(model_dir=self.col_model_dir)
+
+        elif self.config.experiment.mode == 'evaluate_world_model':
+            # --- START: 新增的评估WM模式初始化逻辑 ---
+            
+            # 1) 实例化 TransformerAgent
+            #    注意：这里的 env_obs_shape 只是为了模型结构占位，
+            #    因为我们将加载预训练模型，其结构已经固定。
+            self.col_agent = hydra.utils.instantiate(
+                self.config.transformer_collective_network.builder,
+                env_obs_shape=env_obs_shape,
+                action_shape=action_shape,
+                action_range=[
+                    float(self.action_space.low.min()),
+                    float(self.action_space.high.max()),
+                ],
+                device=self.device,
+            )
+            
+            # 2) 设置模型目录并加载模型
+            #    这里我们复用 'distill_collective_transformer' 的模型目录配置
+            self.col_model_dir = utils.make_dir(
+                os.path.join(self.config.setup.save_dir, "model_dir/model_col")
+            )
+            print(f"Loading collective agent (with world model) from: {self.col_model_dir}")
+            self.col_start_step = self.col_agent.load_latest_step(model_dir=self.col_model_dir)
+            if self.col_start_step == 0:
+                 print("[WARN] No model found to evaluate in `model_dir/model_col`. Make sure a trained agent exists.")
+
+
+            # 3) 加载【验证】数据集 (Validation Set)
+            #    我们使用 'validation' 文件夹下的 buffer 进行评估
+            self.val_buffer_loc = utils.make_dir(
+                os.path.join(self.config.setup.save_dir, "buffer/collective_buffer/validation")
+            )
+            self.distill_buffer_names_val = os.listdir(self.val_buffer_loc)
+            if not self.distill_buffer_names_val:
+                raise FileNotFoundError(f"Validation data not found in {self.val_buffer_loc}")
+            
+            buffer_dirs_val = [
+                utils.make_dir(os.path.join(self.val_buffer_loc, i))
+                for i in self.distill_buffer_names_val
+            ]
+
+            self.replay_buffer_val = hydra.utils.instantiate(
+                self.config.replay_buffer.transformer_col_replay_buffer,
+                device=self.device,
+                env_obs_shape=env_obs_shape,
+                task_obs_shape=(1,),
+                action_shape=action_shape,
+                seq_len=self.seq_len
+            )
+            self.replay_buffer_val.load_multiple_buffer(buffer_dirs_val)
+            print(f"Loaded validation buffer with {len(self.replay_buffer_val)} samples.")
+
+            # --- END: 新增的评估WM模式初始化逻辑 ---
         elif self.config.experiment.mode == 'evaluate_collective_transformer':
             # collective network
             if self.config.experiment.evaluate_transformer == "collective_network":

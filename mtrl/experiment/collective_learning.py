@@ -153,6 +153,8 @@ class Experiment(collective_experiment.Experiment):
             self.distill_policy()
         elif self.config.experiment.mode == 'train_world_model':
             self.run_train_world_model()
+        elif self.config.experiment.mode == 'evaluate_world_model':
+            self.evaluate_world_model()
         else:
             raise NotImplemented
 
@@ -1655,4 +1657,40 @@ class Experiment(collective_experiment.Experiment):
 
         self.close_envs()
         print("finished world model training")
+
+    def evaluate_world_model(self):
+        """Evaluate the pre-trained world model on the validation dataset."""
+        print("\n" + "="*50)
+        print(">>> Starting World Model Evaluation <<<")
+        print("="*50 + "\n")
+        
+        # 1. 安全检查，确保所有需要的组件都已就绪
+        if not hasattr(self, "col_agent") or not self.col_agent:
+            print("[ERROR] Collective agent (col_agent) was not initialized. Check your setup.")
+            return
+        if not self.col_agent.use_world_model:
+            print("[ERROR] `use_world_model` is False. Cannot evaluate world model.")
+            return
+        if not hasattr(self, "replay_buffer_val") or len(self.replay_buffer_val) == 0:
+            print("[ERROR] Validation replay buffer (`replay_buffer_val`) not found or is empty.")
+            return
+
+        # 2. 将评估任务委托给 agent 对象处理，这是良好的代码实践
+        #    我们假设 agent 中会有一个 evaluate_world_model 方法
+        avg_losses = self.col_agent.evaluate_world_model(self.replay_buffer_val)
+
+        # 3. 打印和记录结果
+        print("\n" + "--- World Model Evaluation Results ---")
+        if not avg_losses:
+            print("Evaluation did not return any results.")
+        else:
+            for loss_name, loss_value in avg_losses.items():
+                print(f"  -> {loss_name}: {loss_value:.4f}")
+                # 将结果记录到日志中，方便后续分析
+                self.logger.log(f"eval_wm/{loss_name}", loss_value, 0) # 记录在 step 0
+        
+        self.logger.dump(0) # 强制将日志写入文件
+        print("--- Results logged. Evaluation finished. ---\n")
+        
+        self.close_envs()
 

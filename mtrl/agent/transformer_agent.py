@@ -717,6 +717,70 @@ class TransformerAgent:
         target_Q1, target_Q2 = self.critic_target(critic_input)
         return torch.min(target_Q1, target_Q2)
     
+    def evaluate_world_model(self, validation_buffer: DistilledReplayBuffer, batch_size: int = 256):
+        """
+        Evaluates the world model on a validation buffer.
+        Iterates through the entire buffer, computes losses without backpropagation,
+        and returns the average losses.
+        """
+        if not self.use_world_model or self.world_model is None:
+            print("[Agent-WARN] World model is not configured for this agent.")
+            return {}
+
+        self.world_model.eval()  # 切换到评估模式（例如，关闭dropout）
+        
+        total_dynamics_loss = 0.0
+        total_reward_loss = 0.0
+        total_wm_loss = 0.0
+        
+        buffer_size = len(validation_buffer)
+        num_batches = (buffer_size + batch_size - 1) // batch_size
+        
+        print(f"Starting evaluation on {buffer_size} samples in {num_batches} batches...")
+
+        with torch.no_grad():  # 核心！确保不计算梯度，节省内存和时间
+            for i in range(num_batches):
+                start_idx = i * batch_size
+                end_idx = min((i + 1) * batch_size, buffer_size)
+                idxs = np.arange(start_idx, end_idx)
+
+                # 使用与训练时相同的数据采样和预处理逻辑
+                states, actions, rewards, next_states, _, _, _, task_ids, task_encoding = \
+                    validation_buffer.sample_new(idxs)
+                
+                # 如果需要，重新计算cls_token（与distill_actor中的逻辑保持一致）
+                if self.use_cls_prediction_head:
+                    states_seq, actions_seq, rewards_seq, _, _ = \
+                        validation_buffer.build_sequences_for_indices(idxs, self.seq_len, device=self.device)
+                    task_encoding = self.get_cls_encoding(
+                        states=states_seq, actions=actions_seq, rewards=rewards_seq,
+                        disable_grad=True, mask=None
+                    )
+                
+                # 调用 world_model 的损失计算函数
+                dynamics_loss, reward_loss, wm_total_loss = self.world_model.compute_loss(
+                    state=states,
+                    action=actions,
+                    next_state=next_states,
+                    reward=rewards.unsqueeze(-1) if rewards.dim() == 1 else rewards,
+                    task_encoding=task_encoding
+                )
+                
+                total_dynamics_loss += dynamics_loss.item()
+                total_reward_loss += reward_loss.item()
+                total_wm_loss += wm_total_loss.item()
+
+        # 计算平均损失
+        avg_dynamics_loss = total_dynamics_loss / num_batches
+        avg_reward_loss = total_reward_loss / num_batches
+        avg_total_loss = total_wm_loss / num_batches
+        
+        return {
+            "avg_dynamics_loss": avg_dynamics_loss,
+            "avg_reward_loss": avg_reward_loss,
+            "avg_total_loss": avg_total_loss,
+        }
+    
     def evaluate_critic(
         self,
         replay_buffer_list: DistilledReplayBuffer,
