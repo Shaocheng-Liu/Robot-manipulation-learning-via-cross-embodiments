@@ -92,7 +92,7 @@ class TransformerAgent:
             pretrained_step = wm_cfg_for_init.pop("pretrained_step", None)
             freeze_after_load = wm_cfg_for_init.pop("freeze_after_load", True)
             self.world_model = WorldModel(
-                state_dim=env_obs_shape[0],
+                state_dim=21,
                 action_dim=action_shape[0],
                 task_encoding_dim=self.cls_dim,
                 **wm_cfg_for_init
