@@ -1595,40 +1595,51 @@ class Experiment(collective_experiment.Experiment):
     def run_train_world_model(self):
         """用 TransformerAgent 的 train_world_model 在离线 buffer 上训练 world model。"""
         exp_config = self.config.experiment
+        
+        print("\n" + "="*50)
+        print(">>> Starting World Model Training & Evaluation <<<")
+        print(f"Total training steps: {exp_config.num_wm_train_step}")
+        print(f"Periodic evaluation frequency: {exp_config.wm_eval_freq} steps")
+        print("="*50 + "\n")
 
-        assert hasattr(self, "col_agent"), \
-            "train_world_model 模式需要在 __init__ 里初始化 self.col_agent（见 collective_experiment.py 新增分支）"
-        assert hasattr(self, "replay_buffer_distill"), \
-            "train_world_model 模式需要准备好训练用的 buffer（见 collective_experiment.py 新增分支）"
-        assert getattr(self.col_agent, "use_world_model", False), \
-            "TransformerAgent.use_world_model=False；请在配置里打开 use_world_model 并提供 world_model_cfg/optimizer_cfg。"
+        # 检查验证集是否存在，如果不存在则只进行训练
+        has_validation_buffer = hasattr(self, "replay_buffer_val") and len(self.replay_buffer_val) > 0
+        if not has_validation_buffer:
+            print("[WARN] Validation buffer (`replay_buffer_val`) not found or is empty. Will skip periodic evaluation.")
 
         start_time = time.time()
         assert self.wm_start_step >= 0
 
-        vmin, vmax = self.col_agent.world_model.estimate_reward_bounds_from_buffer(self.replay_buffer_distill)
-
-        _dbg_once = False
-        idxs = self.replay_buffer_distill.sample_indices()
-        s, a, r, ns, _, _, _, _, enc = self.replay_buffer_distill.sample_new(idxs)
-        print(f"[RB/DEBUG] states{tuple(s.shape)} actions{tuple(a.shape)} rewards{tuple(r.shape)} next_states{tuple(ns.shape)} enc{tuple(enc.shape)}")
-        print(f"[RB/DEBUG] states_dim={s.shape[-1]}  (这是WM真正看到的state维度；应当=compressed_state_dim)")
-
         for step in range(self.wm_start_step, exp_config.num_wm_train_step):
-            # 记录耗时
-            if step % exp_config.col_eval_freq == 0:
-                self.logger.log("train/duration", time.time() - start_time, step)
-                start_time = time.time()
-                self.logger.dump(step)
-
-            # === 核心：调用 agent 的 world model 训练 ===
+            
+            # === 1. 核心训练步骤 ===
             self.col_agent.train_world_model(
                 self.replay_buffer_distill, self.logger, step, tb_log=True
             )
             self.wm_start_step += 1
 
-            # 定期保存
-            if exp_config.save.model and step % exp_config.save_freq_transformer == 0:
+            # === 2. 周期性评估逻辑 ===
+            if step > 0 and step % exp_config.wm_eval_freq == 0 and has_validation_buffer:
+                print(f"\n--- Running periodic WM evaluation at step {step} ---")
+                
+                avg_val_losses = self.col_agent.evaluate_world_model(
+                    validation_buffer=self.replay_buffer_val,
+                    model_dir=self.col_model_dir,
+                    batch_size=self.config.replay_buffer.transformer_col_replay_buffer.batch_size
+                )
+                
+                if avg_val_losses:
+                    # --- 核心修改：采用你指定的 "eval/" 日志格式 ---
+                    for loss_name, loss_value in avg_val_losses.items():
+                        self.logger.log(f"eval/{loss_name}", loss_value, step)
+
+            # === 3. 周期性保存和日志打印 ===
+            if step % exp_config.col_eval_freq == 0:
+                self.logger.log("train/duration", time.time() - start_time, step)
+                start_time = time.time()
+                self.logger.dump(step)
+
+            if exp_config.save.model and step % exp_config.save_freq_transformer == 0 and step > 0:
                 self.col_agent.save_only_world_model(
                     self.col_model_dir,
                     step=step,
@@ -1639,7 +1650,7 @@ class Experiment(collective_experiment.Experiment):
                     step=step,
                     retain_last_n=exp_config.save.model.retain_last_n)
 
-        # 收尾保存
+        # 训练结束后的最终保存
         if exp_config.save.model:
             self.col_agent.save_only_world_model(
                 self.col_model_dir,
@@ -1650,10 +1661,6 @@ class Experiment(collective_experiment.Experiment):
             self.col_agent.save_world_model_optimizer(self.col_model_dir,
                 step=exp_config.num_wm_train_step,
                 retain_last_n=exp_config.save.model.retain_last_n)
-
-        # 可选：训练完做一次评估或录视频（如需）
-        # if self.config.experiment.save_video:
-        #     self.record_videos_for_transformer(self.col_agent, seq_len=self.seq_len)
 
         self.close_envs()
         print("finished world model training")
