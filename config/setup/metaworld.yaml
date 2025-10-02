@@ -1,5 +1,5 @@
 # @package _group_
-seed: 5
+seed: 4
 setup: metaworld
 base_path:
 #save_dir: ${setup.base_path}/logs/${setup.id}
