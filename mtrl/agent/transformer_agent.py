@@ -83,14 +83,16 @@ class TransformerAgent:
 
         # components
         if self.use_world_model and world_model_cfg is not None:
-            # Initialize world model
-            # 1. 复制配置字典，以防修改影响其他地方
+            # 1. 复制配置字典，以便安全地修改
             wm_cfg_for_init = dict(world_model_cfg)
 
-            # 2. 从字典中弹出（pop）加载相关的参数，这样它们就不会被传给WorldModel的构造函数
+            # 2. 从字典中弹出（pop）所有与加载相关的参数
+            load_on_init = wm_cfg_for_init.pop("load_on_init", True) # 读取新标志，默认为True
             pretrained_dir = wm_cfg_for_init.pop("pretrained_dir", None)
             pretrained_step = wm_cfg_for_init.pop("pretrained_step", None)
             freeze_after_load = wm_cfg_for_init.pop("freeze_after_load", True)
+            
+            # 3. 无论如何都先创建WorldModel实例（使用纯净的配置）
             self.world_model = WorldModel(
                 state_dim=21,
                 action_dim=action_shape[0],
@@ -98,31 +100,30 @@ class TransformerAgent:
                 **wm_cfg_for_init
             ).to(self.device)
 
-            if pretrained_dir:
-                if not os.path.exists(pretrained_dir):
+            # 4. 只有当 load_on_init 为 True 时，才执行加载逻辑
+            if load_on_init:
+                print("[INFO] `load_on_init` is True. Attempting to load pretrained world model.")
+                if not pretrained_dir or not os.path.exists(pretrained_dir):
                     raise FileNotFoundError(f"Pretrained world model directory not found: {pretrained_dir}")
-                # 只加载 world_model 权重（不动 actor/critic 等）
+                
                 try:
-                    # 如果你已经添加了前面给你的 load_world_model() 方法，优先用它
                     if hasattr(self, "load_world_model"):
                         step_loaded = self.load_world_model(pretrained_dir, step=pretrained_step, load_optimizer=False)
                         print(f"[WM] Successfully loaded world_model from: {pretrained_dir} (step={step_loaded})")
-                    else:
-                        # 后备：通用的 load 接口（会尝试加载所有组件；没有文件会打印提示，不会报错）
-                        if pretrained_step is None:
-                            _ = self.load_latest_step(pretrained_dir)
-                        else:
-                            self.load(pretrained_dir, step=pretrained_step)
-                    print(f"[WM] loaded pretrained world_model from: {pretrained_dir} (step={pretrained_step})")
+                    else: # Fallback
+                        self.load(pretrained_dir, step=pretrained_step if pretrained_step is not None else self.load_latest_step(pretrained_dir))
                 except Exception as e:
                     print(f"[WM][WARN] failed to load pretrained world_model from {pretrained_dir}: {e}")
+                    raise e # 重新抛出异常，因为如果配置了加载但失败，应该停下来
 
                 if freeze_after_load:
                     self.world_model.eval()
                     for p in self.world_model.parameters():
                         p.requires_grad_(False)
                     print("[WM] frozen after loading (eval mode).")
-                self._exclude_wm_from_ckpt = True # 保存时不再保存 WM   
+                self._exclude_wm_from_ckpt = True
+            else:
+                print("[INFO] `load_on_init` is False. Starting with a fresh, untrained World Model.")
 
             # When using world model, actor uses latent states
             actor_input_dim = world_model_cfg.get('latent_dim', 512)
