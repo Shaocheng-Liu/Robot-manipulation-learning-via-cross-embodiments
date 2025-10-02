@@ -1624,7 +1624,6 @@ class Experiment(collective_experiment.Experiment):
                 
                 avg_val_losses = self.col_agent.evaluate_world_model(
                     validation_buffer=self.replay_buffer_val,
-                    model_dir=self.col_model_dir,
                     batch_size=self.config.replay_buffer.transformer_col_replay_buffer.batch_size
                 )
                 
