@@ -46,6 +46,7 @@ train:
     [world_model_dynamics_loss, WM/DynLoss, float, average],
     [world_model_reward_loss, WM/RwdLoss, float, average],
     [world_model_total_loss, WM/Total, float, average],
+    
   ]
 eval:
   [
@@ -58,6 +59,9 @@ eval:
     [success_env_index_, Su_, float, average],
     [env_index_, ENV_, str, constant],
     [batch_reward_agent_index_, AGENT_, float, average],
+    [avg_dynamics_loss, WM/DynLoss, float, average],
+    [avg_reward_loss, WM/RwdLoss, float, average],
+    [avg_total_loss, WM/Total, float, average],
   ]
 col_train:
   [
@@ -113,4 +117,7 @@ col_eval:
     [env_index_, ENV_, str, constant],
     [batch_reward_agent_index_, AGENT_, float, average],
     [critic_loss, CLOSS, float, average],
+    [avg_dynamics_loss, WM/DynLoss, float, average],
+    [avg_reward_loss, WM/RwdLoss, float, average],
+    [avg_total_loss, WM/Total, float, average],
   ]

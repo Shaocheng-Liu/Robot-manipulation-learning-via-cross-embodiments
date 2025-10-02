@@ -46,6 +46,9 @@ eval:
     [episode_reward_env_index_, R_, float, average],
     [env_index_, ENV_, str, constant],
     [batch_reward_agent_index_, AGENT_, float, average],
+    [avg_dynamics_loss, WM/DynLoss, float, average],
+    [avg_reward_loss, WM/RwdLoss, float, average],
+    [avg_total_loss, WM/Total, float, average],
   ]
 eval_base:
   [
@@ -56,6 +59,9 @@ eval_base:
     [episode_reward_env_index_, R_, float, average],
     [env_index_, ENV_, str, constant],
     [batch_reward_agent_index_, AGENT_, float, average],
+    [avg_dynamics_loss, WM/DynLoss, float, average],
+    [avg_reward_loss, WM/RwdLoss, float, average],
+    [avg_total_loss, WM/Total, float, average],
   ]
 eval_interpolation:
   [
@@ -66,6 +72,9 @@ eval_interpolation:
     [episode_reward_env_index_, R_, float, average],
     [env_index_, ENV_, str, constant],
     [batch_reward_agent_index_, AGENT_, float, average],
+    [avg_dynamics_loss, WM/DynLoss, float, average],
+    [avg_reward_loss, WM/RwdLoss, float, average],
+    [avg_total_loss, WM/Total, float, average],
   ]
 eval_extrapolation:
   [
@@ -76,4 +85,7 @@ eval_extrapolation:
     [episode_reward_env_index_, R_, float, average],
     [env_index_, ENV_, str, constant],
     [batch_reward_agent_index_, AGENT_, float, average],
+    [avg_dynamics_loss, WM/DynLoss, float, average],
+    [avg_reward_loss, WM/RwdLoss, float, average],
+    [avg_total_loss, WM/Total, float, average],
   ]

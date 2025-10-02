@@ -1687,7 +1687,7 @@ class Experiment(collective_experiment.Experiment):
             for loss_name, loss_value in avg_losses.items():
                 print(f"  -> {loss_name}: {loss_value:.4f}")
                 # 将结果记录到日志中，方便后续分析
-                self.logger.log(f"eval_wm/{loss_name}", loss_value, 0) # 记录在 step 0
+                self.logger.log(f"eval/{loss_name}", loss_value, 0) # 记录在 step 0
         
         self.logger.dump(0) # 强制将日志写入文件
         print("--- Results logged. Evaluation finished. ---\n")
