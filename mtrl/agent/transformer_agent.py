@@ -758,6 +758,7 @@ class TransformerAgent:
                     )
                 
                 # 调用 world_model 的损失计算函数
+                next_states = _compress_meta_state(next_states)
                 dynamics_loss, reward_loss, wm_total_loss = self.world_model.compute_loss(
                     state=states,
                     action=actions,
