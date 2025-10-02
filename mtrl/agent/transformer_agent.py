@@ -771,7 +771,13 @@ class TransformerAgent:
 
         with torch.no_grad():
             if self.additional_input_state:
-                critic_input = torch.cat((task_encoding, states, actions), dim=1)
+                if self.use_world_model:
+                    # 使用 world model 对 state 进行编码
+                    latent_state = self.world_model.encode(states, task_encoding)
+                    critic_input = torch.cat((task_encoding, latent_state, actions), dim=1)
+                else:
+                    # 保持原始逻辑
+                    critic_input = torch.cat((task_encoding, states, actions), dim=1)
             else:
                 raise NotImplemented
 
