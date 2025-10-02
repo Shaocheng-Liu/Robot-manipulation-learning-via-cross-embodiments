@@ -727,7 +727,7 @@ class TransformerActor(BaseActor):
         else:
             model_input_dim = transformer_encoder_cfg.representation_transformer.d_model # TODO Change/improve
         if self.additional_input_state:
-            model_input_dim += 21 # TODO: self.env_flatten_dim
+            model_input_dim = self.env_flatten_dim
         
         #trunk = agent_utils.build_mlp(
         #    input_dim=model_input_dim,

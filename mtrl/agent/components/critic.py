@@ -711,7 +711,7 @@ class TransformerCritic(base_component.Component):
         else:
             model_input_dim = transformer_encoder_cfg.representation_transformer.d_model # TODO Change/improve
         if additional_input_state:
-            model_input_dim += 21 # TODO: self.env_flatten_dim
+            model_input_dim = self.env_flatten_dim
 
         model_input_dim += self.action_flatten_dim
 
